@@ -22,8 +22,9 @@
   --color-warn: #ff9f0a;
   --color-bad: #ff453a;
 
+  /* überschreibt Tailwinds `ease-out` mit einer kräftigeren Kurve */
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
   --ease-apple: cubic-bezier(0.32, 0.72, 0, 1);
-  --ease-out-quart: cubic-bezier(0.25, 1, 0.5, 1);
 }
 
 @layer base {

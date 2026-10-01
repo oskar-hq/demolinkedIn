@@ -4,7 +4,7 @@ Klickbare Demo eines LinkedIn-Outreach-Cockpits für die Kundenpräsentation. Re
 alle Daten sind erfundene Beispieldaten im Code, der Zustand lebt nur im Browser-Speicher.
 Ein Neuladen der Seite oder **„Demo zurücksetzen“** stellt den Ausgangszustand wieder her.
 
-Aufbau und Datenstruktur: siehe [`PLAN.md`](PLAN.md).
+Aufbau und Datenstruktur: siehe [`PLAN.md`](PLAN.md). Design-Regeln für dieses und künftige Projekte: [`DESIGN.md`](DESIGN.md).
 
 ## Starten mit Docker (z. B. auf dem Proxmox-Server)
 
