@@ -125,3 +125,18 @@
     -webkit-backdrop-filter: none;
   }
 }
+
+/* Systemeinstellung „Kontrast erhöhen“: kräftigere Linien und Sekundärtexte */
+@media (prefers-contrast: more) {
+  :root {
+    --color-line: rgb(255 255 255 / 0.22);
+    --color-line-strong: rgb(255 255 255 / 0.36);
+    --color-ink-2: #d1d1d6;
+    --color-ink-3: #a1a1a6;
+  }
+  .glass {
+    background: var(--color-surface-1);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+}

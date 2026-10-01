@@ -131,6 +131,47 @@ test('Filter: nur eine Aufgabenart abarbeiten', async ({ page }) => {
   expect(errors).toEqual([]);
 });
 
+/** Zieht die aktuelle Seite horizontal – Start auf einer Fläche ohne Bedienelement. */
+async function swipe(page: Page, dx: number, steps: number) {
+  const box = await page.getByTestId('ai-summary').or(page.getByText('KI-Zusammenfassung')).first().boundingBox();
+  if (!box) throw new Error('Keine Fläche zum Wischen gefunden');
+  const startX = box.x + box.width / 2;
+  const startY = box.y + box.height / 2;
+  await page.mouse.move(startX, startY);
+  await page.mouse.down();
+  await page.mouse.move(startX + dx, startY, { steps });
+  await page.mouse.up();
+}
+
+test('Wischen entscheidet wie die Pfeiltasten', async ({ page }) => {
+  const errors = trackErrors(page);
+  await login(page, 'nick');
+  await page.getByTestId('start-lead').click();
+  await expect(currentCard(page)).toHaveAttribute('data-card-id', 'n11');
+
+  // Kurzes, langsames Ziehen reicht nicht – die Seite federt zurück.
+  await swipe(page, 60, 30);
+  await page.waitForTimeout(700);
+  await expect(page.getByTestId('progress')).toHaveText('0 von 14 erledigt');
+  await expect(currentCard(page)).toHaveAttribute('data-card-id', 'n11');
+
+  // Weit nach rechts ziehen = Vernetzen
+  await swipe(page, 320, 12);
+  await expect(page.locator('[data-card-id="n11"]')).toHaveCount(0);
+  await expect(page.getByTestId('progress')).toHaveText('1 von 14 erledigt');
+
+  // Nach links = Nicht geeignet
+  await expect(currentCard(page)).toHaveAttribute('data-card-id', 'n12');
+  await swipe(page, -320, 12);
+  await expect(page.locator('[data-card-id="n12"]')).toHaveCount(0);
+  await expect(page.getByTestId('progress')).toHaveText('2 von 14 erledigt');
+
+  // Rückgängig holt die Aufgabe zurück
+  await page.keyboard.press('z');
+  await expect(currentCard(page)).toHaveAttribute('data-card-id', 'n12');
+  expect(errors).toEqual([]);
+});
+
 test('Rückgängig stellt die letzte Entscheidung wieder her', async ({ page }) => {
   await login(page, 'nick');
   await startFocus(page);

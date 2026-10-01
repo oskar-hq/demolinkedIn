@@ -3,6 +3,7 @@ import { BarChart3, Layers, LogOut, RotateCcw } from 'lucide-react';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { FOUNDERS } from '../../data/founders';
 import { cn } from '../../lib/cn';
+import { useScrolled } from '../../lib/useScrolled';
 import { pendingCards, useDemo } from '../../state/demo';
 import type { FounderId, View } from '../../state/types';
 import { Avatar } from '../ui/Avatar';
@@ -13,6 +14,7 @@ export function TopNav() {
   const { state, dispatch } = useDemo();
   const founder = FOUNDERS[state.founder as FounderId];
   const open = pendingCards(state, founder.id).length;
+  const scrolled = useScrolled();
 
   const items: { view: View; label: string; icon: ReactNode; badge?: number }[] = [
     { view: 'home', label: 'Aufgaben', icon: <Layers className="h-4 w-4" />, badge: open },
@@ -20,7 +22,12 @@ export function TopNav() {
   ];
 
   return (
-    <header className="glass sticky top-0 z-30 border-b border-line">
+    <header
+      className={cn(
+        'glass sticky top-0 z-30 border-b transition-colors duration-300',
+        scrolled ? 'border-line' : 'border-transparent',
+      )}
+    >
       <div className="mx-auto flex h-14 max-w-[1240px] items-center gap-3 px-4 sm:px-6">
         <Logo />
 

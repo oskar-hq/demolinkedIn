@@ -49,6 +49,7 @@ function ModalContent({ onClose, children, labelledBy, className }: Omit<ModalPr
           'relative z-10 max-h-[92vh] w-full overflow-hidden rounded-t-[28px] border border-line-strong bg-surface-2 shadow-[0_40px_120px_-20px_rgb(0_0_0/0.9)] sm:max-w-2xl sm:rounded-[28px]',
           className,
         )}
+        style={{ transformOrigin: '50% 100%' }}
         initial={{ opacity: 0, scale: 0.96, y: 12 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.97, y: 8 }}

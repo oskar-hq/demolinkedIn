@@ -8,6 +8,7 @@ import { Button } from '../ui/Button';
 import { Pill } from '../ui/Pill';
 import { Block, Eyebrow, FocusPage, PersonHeader } from './FocusParts';
 import type { CardProps } from './cardTypes';
+import { useSwipeActions } from './swipe';
 
 export function LeadCard({ card, onDecide, onOpenLead, hotkeysEnabled }: CardProps) {
   const { lead } = useLeadHistory(card.leadId);
@@ -39,6 +40,7 @@ export function LeadCard({ card, onDecide, onOpenLead, hotkeysEnabled }: CardPro
     });
 
   useHotkeys({ arrowright: connect, arrowleft: reject }, hotkeysEnabled && present);
+  useSwipeActions({ right: { label: 'Vernetzen', run: connect }, left: { label: 'Nicht geeignet', run: reject } });
 
   return (
     <FocusPage

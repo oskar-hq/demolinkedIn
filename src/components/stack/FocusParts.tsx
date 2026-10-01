@@ -1,14 +1,18 @@
-import { ChevronRight, Sparkles } from 'lucide-react';
+import { motion, useTransform, type MotionValue } from 'motion/react';
+import { ArrowLeft, ArrowRight, ChevronRight, Sparkles } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { cn } from '../../lib/cn';
 import { fullName, initials } from '../../lib/leadInfo';
 import type { Lead } from '../../state/types';
 import { Avatar } from '../ui/Avatar';
+import { useSwipeContext, type SwipeActions } from './swipe';
 
 /** Eine Aufgabe = eine Seite: Inhalt mittig, Entscheidung unten in fester Position. */
 export function FocusPage({ children, actions }: { children: ReactNode; actions: ReactNode }) {
+  const swipe = useSwipeContext();
   return (
-    <div className="flex min-h-[calc(100dvh-64px)] flex-col">
+    <div className="relative flex min-h-[calc(100dvh-64px)] flex-col">
+      {swipe?.actionsRef.current && <SwipeHints x={swipe.x} actions={swipe.actionsRef.current} />}
       <div className="flex flex-1 flex-col items-center px-5 pb-10 pt-6 sm:pt-8">
         <div className="w-full max-w-[600px]">{children}</div>
       </div>
@@ -19,9 +23,57 @@ export function FocusPage({ children, actions }: { children: ReactNode; actions:
   );
 }
 
-export function Eyebrow({ children }: { children: ReactNode }) {
+/**
+ * Hinweis in Richtung der Geste: Schon während des Wischens zeigt ein Label, welche Entscheidung
+ * gleich fällt – es blendet proportional zur Auslenkung ein.
+ */
+function SwipeHints({ x, actions }: { x: MotionValue<number>; actions: SwipeActions }) {
+  const rightOpacity = useTransform(x, [24, 140], [0, 1]);
+  const leftOpacity = useTransform(x, [-140, -24], [1, 0]);
+  const rightScale = useTransform(x, [24, 140], [0.9, 1]);
+  const leftScale = useTransform(x, [-140, -24], [1, 0.9]);
   return (
-    <p className="mb-5 text-center text-[12px] font-medium uppercase tracking-[0.1em] text-ink-3">{children}</p>
+    <div aria-hidden className="pointer-events-none absolute inset-x-0 top-[18px] z-20 flex justify-center sm:top-[26px]">
+      <motion.span
+        style={{ opacity: rightOpacity, scale: rightScale }}
+        className={cn(
+          'absolute flex h-9 items-center gap-2 rounded-full px-4 text-[14px] font-semibold shadow-[0_12px_32px_-8px_rgb(0_0_0/0.8)]',
+          actions.right.enabled === false ? 'bg-surface-4 text-ink-3' : 'bg-ink text-black',
+        )}
+      >
+        {actions.right.label}
+        <ArrowRight className="h-4 w-4" />
+      </motion.span>
+      <motion.span
+        style={{ opacity: leftOpacity, scale: leftScale }}
+        className="absolute flex h-9 items-center gap-2 rounded-full border border-line-strong bg-surface-3 px-4 text-[14px] font-semibold text-ink shadow-[0_12px_32px_-8px_rgb(0_0_0/0.8)]"
+      >
+        <ArrowLeft className="h-4 w-4" />
+        {actions.left.label}
+      </motion.span>
+    </div>
+  );
+}
+
+export function Eyebrow({ children }: { children: ReactNode }) {
+  const swipe = useSwipeContext();
+  const className = 'mb-5 text-center text-[12px] font-medium uppercase tracking-[0.1em] text-ink-3';
+  return swipe ? (
+    <SwipeAwareEyebrow x={swipe.x} className={className}>
+      {children}
+    </SwipeAwareEyebrow>
+  ) : (
+    <p className={className}>{children}</p>
+  );
+}
+
+/** Die Überschrift weicht dem Richtungs-Hinweis, der an ihrer Stelle erscheint. */
+function SwipeAwareEyebrow({ x, className, children }: { x: MotionValue<number>; className: string; children: ReactNode }) {
+  const opacity = useTransform(x, [-60, -16, 16, 60], [0, 1, 1, 0]);
+  return (
+    <motion.p style={{ opacity }} className={className}>
+      {children}
+    </motion.p>
   );
 }
 

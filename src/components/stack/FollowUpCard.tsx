@@ -15,6 +15,7 @@ import { ChatThread } from './ChatThread';
 import { AiSummary, Eyebrow, FocusPage, PersonHeader } from './FocusParts';
 import { MessageEditor, focusAtEnd } from './MessageEditor';
 import type { CardProps } from './cardTypes';
+import { useSwipeActions } from './swipe';
 
 export function FollowUpCard({ card, onDecide, onOpenLead, hotkeysEnabled }: CardProps) {
   const { lead, messages, lastOwnMessageAt } = useLeadHistory(card.leadId);
@@ -78,6 +79,10 @@ export function FollowUpCard({ card, onDecide, onOpenLead, hotkeysEnabled }: Car
     },
     hotkeysEnabled && present,
   );
+  useSwipeActions({
+    right: { label: `Follow-up ${stage} senden`, run: send, enabled: Boolean(text.trim()) },
+    left: { label: 'Nicht senden', run: skip },
+  });
 
   return (
     <FocusPage

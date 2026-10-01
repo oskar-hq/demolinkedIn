@@ -11,6 +11,7 @@ import { ChatThread } from './ChatThread';
 import { CloseExportModal } from './CloseExportModal';
 import { Eyebrow, FocusPage, PersonHeader } from './FocusParts';
 import type { CardProps } from './cardTypes';
+import { useSwipeActions } from './swipe';
 
 const TONE = {
   positive: 'good',
@@ -54,6 +55,17 @@ export function ReplyCard({ card, onDecide, onOpenLead, hotkeysEnabled }: CardPr
     { arrowright: () => setExportOpen(true), arrowleft: discard, v: () => setHistoryOpen((open) => !open) },
     hotkeysEnabled && present && !exportOpen,
   );
+  useSwipeActions({
+    // Export öffnet erst die Vorschau – die Seite bleibt dafür stehen.
+    right: {
+      label: 'In Close exportieren',
+      run: () => {
+        setExportOpen(true);
+        return false;
+      },
+    },
+    left: { label: 'Verwerfen', run: discard },
+  });
 
   return (
     <>

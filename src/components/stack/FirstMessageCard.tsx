@@ -14,6 +14,7 @@ import { Segmented } from '../ui/Segmented';
 import { AiSummary, Eyebrow, FocusPage, PersonHeader } from './FocusParts';
 import { MessageEditor, focusAtEnd } from './MessageEditor';
 import type { CardProps } from './cardTypes';
+import { useSwipeActions } from './swipe';
 
 export function FirstMessageCard({ card, onDecide, onOpenLead, hotkeysEnabled }: CardProps) {
   const { lead, acceptedAt } = useLeadHistory(card.leadId);
@@ -64,6 +65,10 @@ export function FirstMessageCard({ card, onDecide, onOpenLead, hotkeysEnabled }:
     },
     hotkeysEnabled && present,
   );
+  useSwipeActions({
+    right: { label: 'Senden', run: send, enabled: Boolean(text.trim()) },
+    left: { label: 'Nicht senden', run: skip },
+  });
 
   return (
     <FocusPage

@@ -23,6 +23,17 @@ interface Snapshot {
   cardId: string;
 }
 
+/**
+ * Wie die zuletzt sichtbare Aufgabe den Bildschirm verlassen hat – steuert die Übergänge,
+ * damit Ein- und Ausgang räumlich zusammenpassen (z. B. kommt „Rückgängig“ von der Seite zurück,
+ * zu der die Aufgabe verschwunden ist).
+ */
+export interface PageMotion {
+  kind: 'decide' | 'undo' | 'jump';
+  /** Richtung der Entscheidung: true = rechts (positiv), false = links. */
+  positive: boolean;
+}
+
 export interface DemoState {
   founder: FounderId | null;
   loginAt: number | null;
@@ -38,6 +49,7 @@ export interface DemoState {
   pinged: Record<FounderId, boolean>;
   slackToast: { leadId: string; at: number } | null;
   panelLeadId: string | null;
+  pageMotion: PageMotion;
   undoStack: Snapshot[];
   /** Erhöht sich bei jedem Reset – dient als React-Key zum vollständigen Neuaufbau. */
   generation: number;
@@ -46,6 +58,7 @@ export interface DemoState {
 export interface DecisionPayload {
   cardId: string;
   decision: Decision;
+  positive: boolean;
   event: { kind: TimelineKind; title: string; detail?: string };
   message?: { text: string; label: string };
 }
@@ -98,6 +111,7 @@ function createInitialState(generation = 0): DemoState {
     pinged: { nick: false, johannes: false },
     slackToast: null,
     panelLeadId: null,
+    pageMotion: { kind: 'jump', positive: true },
     undoStack: [],
     generation,
   };
@@ -143,13 +157,13 @@ function reducer(state: DemoState, action: DemoAction): DemoState {
       return { ...state, view: action.view, panelLeadId: null };
 
     case 'SET_FILTER':
-      return { ...state, filter: action.filter };
+      return { ...state, filter: action.filter, pageMotion: { kind: 'jump', positive: true } };
 
     case 'START_FOCUS':
-      return { ...state, view: 'focus', filter: action.filter, panelLeadId: null };
+      return { ...state, view: 'focus', filter: action.filter, panelLeadId: null, pageMotion: { kind: 'jump', positive: true } };
 
     case 'DECIDE': {
-      const { cardId, decision, event, message } = action.payload;
+      const { cardId, decision, positive, event, message } = action.payload;
       const card = state.cards[cardId];
       if (!card || card.status !== 'pending') return state;
       const now = Date.now();
@@ -183,6 +197,7 @@ function reducer(state: DemoState, action: DemoAction): DemoState {
           live: true,
         }),
         undoStack: [...state.undoStack.slice(-29), snapshot],
+        pageMotion: { kind: 'decide', positive },
       };
     }
 
@@ -191,6 +206,8 @@ function reducer(state: DemoState, action: DemoAction): DemoState {
       if (!snapshot) return state;
       const card = snapshot.cards[snapshot.cardId];
       const filterMatches = state.filter === 'all' || state.filter === card.type;
+      const undone = state.cards[snapshot.cardId].decision;
+      const wasPositive = undone === 'connect' || undone === 'send' || undone === 'export';
       return {
         ...state,
         cards: snapshot.cards,
@@ -200,6 +217,7 @@ function reducer(state: DemoState, action: DemoAction): DemoState {
         undoStack: state.undoStack.slice(0, -1),
         filter: filterMatches ? state.filter : 'all',
         view: 'focus',
+        pageMotion: { kind: 'undo', positive: wasPositive },
       };
     }
 
@@ -256,6 +274,7 @@ function reducer(state: DemoState, action: DemoAction): DemoState {
         view: 'focus',
         slackToast: null,
         panelLeadId: null,
+        pageMotion: { kind: 'jump', positive: true },
       };
     }
 

@@ -15,7 +15,7 @@ export function Login() {
   const login = (id: FounderId) => {
     if (loading) return;
     setLoading(id);
-    window.setTimeout(() => dispatch({ type: 'LOGIN', founder: id }), 650);
+    window.setTimeout(() => dispatch({ type: 'LOGIN', founder: id }), 300);
   };
 
   return (
