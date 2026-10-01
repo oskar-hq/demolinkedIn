@@ -39,7 +39,7 @@ export function Login() {
           <p className="text-[13px] font-medium text-ink-3">LinkedIn-Outreach für Kapitalanlage-Vertriebe & Bauträger</p>
           <h1 className="display mt-3 text-[44px] font-semibold sm:text-[64px]">Willkommen zurück.</h1>
           <p className="mx-auto mt-4 max-w-md text-[17px] leading-relaxed text-ink-2">
-            Wähle dein Profil, um deinen Tages-Stapel zu öffnen.
+            Wähle dein Profil, um deine Aufgaben für heute zu öffnen.
           </p>
         </motion.div>
 
@@ -81,7 +81,7 @@ export function Login() {
                 <p className="display mt-6 text-[24px] font-semibold">{founder.name}</p>
                 <p className="mt-0.5 text-[14px] text-ink-2">{founder.role}</p>
                 <p className="mt-5 text-[12.5px] text-ink-3">
-                  {isLoading ? 'Anmelden…' : `${count} Karten im heutigen Stapel`}
+                  {isLoading ? 'Anmelden…' : `${count} Aufgaben für heute`}
                 </p>
               </motion.button>
             );

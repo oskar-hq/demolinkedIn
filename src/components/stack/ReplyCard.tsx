@@ -1,14 +1,15 @@
-import { ArrowUpRight, Clock3, MessageCircle, Sparkles } from 'lucide-react';
+import { ArrowUpRight, ChevronUp, Sparkles } from 'lucide-react';
 import { useIsPresent } from 'motion/react';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useState } from 'react';
 import { formatRelative } from '../../lib/time';
 import { useHotkeys } from '../../lib/useHotkeys';
 import { useLeadHistory } from '../../state/demo';
 import { Button } from '../ui/Button';
+import { Kbd } from '../ui/Kbd';
 import { Pill } from '../ui/Pill';
-import { CardShell, FooterSpacer, LeadRow, SectionLabel } from './CardParts';
 import { ChatThread } from './ChatThread';
 import { CloseExportModal } from './CloseExportModal';
+import { Eyebrow, FocusPage, PersonHeader } from './FocusParts';
 import type { CardProps } from './cardTypes';
 
 const TONE = {
@@ -17,30 +18,26 @@ const TONE = {
   negative: 'bad',
 } as const;
 
+/** Standardmäßig sichtbar: nur die neue Antwort – der übrige Verlauf ist einen Klick entfernt. */
+const VISIBLE_BY_DEFAULT = 1;
+
 export function ReplyCard({ card, onDecide, onOpenLead, hotkeysEnabled }: CardProps) {
   const { lead, messages } = useLeadHistory(card.leadId);
   const present = useIsPresent();
   const [exportOpen, setExportOpen] = useState(false);
-  const threadRef = useRef<HTMLDivElement>(null);
+  const [historyOpen, setHistoryOpen] = useState(false);
   const latestReply = [...messages].reverse().find((message) => message.from === 'lead');
   const assessment = lead.replyAssessment;
   const fresh = latestReply ? Date.now() - latestReply.at < 10 * 60_000 : false;
-
-  useEffect(() => {
-    const element = threadRef.current;
-    if (element) element.scrollTop = element.scrollHeight;
-  }, []);
+  const hiddenCount = Math.max(0, messages.length - VISIBLE_BY_DEFAULT);
+  const visibleMessages = historyOpen ? messages : messages.slice(-VISIBLE_BY_DEFAULT);
 
   const exportToClose = useCallback(() => {
     setExportOpen(false);
     onDecide({
       decision: 'export',
       positive: true,
-      event: {
-        kind: 'exported',
-        title: 'Nach Close exportiert',
-        detail: lead.closeSummary,
-      },
+      event: { kind: 'exported', title: 'Nach Close exportiert', detail: lead.closeSummary },
       toast: { pending: 'Wird nach Close exportiert…', done: 'In Close angelegt' },
     });
   }, [lead.closeSummary, onDecide]);
@@ -53,63 +50,70 @@ export function ReplyCard({ card, onDecide, onOpenLead, hotkeysEnabled }: CardPr
       toast: { pending: 'Wird archiviert…', done: 'Verworfen' },
     });
 
-  useHotkeys({ arrowright: () => setExportOpen(true), arrowleft: discard }, hotkeysEnabled && present && !exportOpen);
+  useHotkeys(
+    { arrowright: () => setExportOpen(true), arrowleft: discard, v: () => setHistoryOpen((open) => !open) },
+    hotkeysEnabled && present && !exportOpen,
+  );
 
   return (
     <>
-      <CardShell
-        typeLabel="Antwort erhalten"
-        typeIcon={<MessageCircle />}
-        badge={
-          fresh ? (
-            <span className="flex h-6 items-center rounded-full bg-accent px-2.5 text-[11.5px] font-semibold text-white">Neu</span>
-          ) : null
-        }
-        meta={
-          latestReply && (
-            <>
-              <Clock3 />
-              Antwort {formatRelative(latestReply.at)}
-            </>
-          )
-        }
-        footer={
+      <FocusPage
+        actions={
           <>
-            <Button variant="outline" size="lg" shortcut="←" shortcutPosition="start" onClick={discard}>
+            <Button variant="outline" size="xl" shortcut="←" shortcutPosition="start" onClick={discard} className="w-full">
               Verwerfen
             </Button>
-            <FooterSpacer />
             <Button
               variant="primary"
-              size="lg"
+              size="xl"
               shortcut="→"
               onClick={() => setExportOpen(true)}
               icon={<ArrowUpRight className="h-4 w-4" />}
+              className="w-full"
             >
-              In Close exportieren
+              <span className="sm:hidden">Nach Close</span>
+              <span className="hidden sm:inline">In Close exportieren</span>
             </Button>
           </>
         }
       >
-        <LeadRow lead={lead} onOpen={() => onOpenLead(lead.id)} />
+        <Eyebrow>
+          {fresh && <span className="mr-2 rounded-full bg-accent px-2 py-0.5 text-[11px] font-semibold tracking-normal text-white normal-case">Neu</span>}
+          Antwort erhalten{latestReply ? ` · ${formatRelative(latestReply.at)}` : ''}
+        </Eyebrow>
+        <PersonHeader lead={lead} avatarSize={60} onOpen={() => onOpenLead(lead.id)} />
 
         {assessment && (
-          <section className="mt-5 flex flex-wrap items-center gap-x-3 gap-y-2 rounded-2xl border border-line bg-white/[0.02] px-4 py-3">
-            <SectionLabel icon={<Sparkles />} className="mb-0">
-              KI-Einschätzung
-            </SectionLabel>
-            <Pill tone={TONE[assessment.tone]}>{assessment.label}</Pill>
-            <p className="min-w-[200px] flex-1 text-[13px] text-ink-2">{assessment.reason}</p>
-          </section>
+          <div className="mt-6 flex flex-col items-center text-center">
+            <div className="flex items-center gap-2">
+              <span className="flex items-center gap-1 text-[12px] font-medium uppercase tracking-[0.08em] text-ink-3">
+                <Sparkles className="h-3.5 w-3.5" />
+                KI
+              </span>
+              <Pill tone={TONE[assessment.tone]}>{assessment.label}</Pill>
+            </div>
+            <p className="mt-2.5 max-w-[460px] text-[14px] leading-[1.55] text-ink-3">{assessment.reason}</p>
+          </div>
         )}
 
-        <div
-          ref={threadRef}
-          className="scroll-thin -mx-2 mt-5 max-h-[380px] overflow-y-auto px-2 pb-1 pt-4 [mask-image:linear-gradient(to_bottom,transparent,black_28px)]"
-        >
-          <ChatThread lead={lead} messages={messages} highlightLatestReply />
+        <div className="mt-10">
+          {hiddenCount > 0 && (
+            <div className="mb-5 flex justify-center">
+              <button
+                type="button"
+                onClick={() => setHistoryOpen((open) => !open)}
+                aria-expanded={historyOpen}
+                className="inline-flex h-8 items-center gap-1.5 rounded-full px-3 text-[13px] text-ink-2 transition-colors hover:bg-white/[0.06] hover:text-ink"
+              >
+                <ChevronUp className={historyOpen ? 'h-4 w-4 rotate-180 transition-transform' : 'h-4 w-4 transition-transform'} />
+                {historyOpen ? 'Verlauf ausblenden' : `Ganzen Verlauf anzeigen · ${hiddenCount} frühere ${hiddenCount === 1 ? 'Nachricht' : 'Nachrichten'}`}
+                <Kbd>V</Kbd>
+              </button>
+            </div>
+          )}
+          <ChatThread lead={lead} messages={visibleMessages} highlightLatestReply />
         </div>
-      </CardShell>
+      </FocusPage>
 
       <CloseExportModal
         open={exportOpen && present}

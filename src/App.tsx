@@ -6,7 +6,8 @@ import { TopNav } from './components/layout/TopNav';
 import { LeadPanel } from './components/lead/LeadPanel';
 import { SlackToast } from './components/slack/SlackToast';
 import { ActivityProvider } from './components/stack/ActivityToasts';
-import { StackView } from './components/stack/StackView';
+import { FocusView } from './components/stack/FocusView';
+import { HomeView } from './components/stack/HomeView';
 import { Login } from './pages/Login';
 import { useDemo } from './state/demo';
 
@@ -53,20 +54,41 @@ function Shell() {
 
   return (
     <ActivityProvider>
-      <div className="min-h-dvh">
-        <TopNav />
-        <AnimatePresence mode="wait" initial={false}>
-          <motion.main
-            key={state.view}
-            initial={{ opacity: 0, y: 8 }}
+      <AnimatePresence mode="wait" initial={false}>
+        {state.view === 'focus' ? (
+          <motion.div
+            key="focus"
+            initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -4 }}
-            transition={{ duration: 0.22, ease: [0.25, 1, 0.5, 1] }}
+            exit={{ opacity: 0, y: 8 }}
+            transition={{ duration: 0.28, ease: [0.25, 1, 0.5, 1] }}
           >
-            {state.view === 'stack' ? <StackView /> : <DashboardView />}
-          </motion.main>
-        </AnimatePresence>
-      </div>
+            <FocusView />
+          </motion.div>
+        ) : (
+          <motion.div
+            key="app"
+            className="min-h-dvh"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.22 }}
+          >
+            <TopNav />
+            <AnimatePresence mode="wait" initial={false}>
+              <motion.main
+                key={state.view}
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -4 }}
+                transition={{ duration: 0.22, ease: [0.25, 1, 0.5, 1] }}
+              >
+                {state.view === 'home' ? <HomeView /> : <DashboardView />}
+              </motion.main>
+            </AnimatePresence>
+          </motion.div>
+        )}
+      </AnimatePresence>
       <LeadPanel />
       <SlackToast />
     </ActivityProvider>

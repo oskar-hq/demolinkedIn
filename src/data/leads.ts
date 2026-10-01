@@ -1,7 +1,7 @@
 /**
  * Fake-Daten. Alle Personen und Firmen sind frei erfunden.
  * Jeder Lead gehört genau einem Gründer (dessen LinkedIn-Account ihn angeschrieben hat)
- * und erzeugt genau eine Karte im Tages-Stapel – je nach aktueller Stufe.
+ * und erzeugt genau eine Aufgabe für heute – je nach aktueller Stufe.
  */
 
 import type { Lead } from '../state/types';

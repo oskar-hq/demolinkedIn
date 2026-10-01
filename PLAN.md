@@ -22,15 +22,19 @@ Aktionen: `LOGIN`, `LOGOUT`, `RESET`, `DECIDE`, `UNDO`, `PING_ARRIVE`, `FOCUS_CA
 „Demo zurücksetzen“ = `RESET` → alles zurück auf den Ausgangszustand (Login-Seite).
 
 ## Komponenten
+Minimalistisches Prinzip: pro Bildschirm genau eine Sache.
+
 - `pages/Login` – Auswahl Nick / Johannes
-- `layout/TopNav` – Navigation (Tages-Stapel, Dashboard), Nutzer, Reset; `DemoBadge` unten links
-- `stack/StackView` – Fortschritt, Filter-Tabs, Kartenstapel, Tastaturkürzel, leerer Zustand
-  - `LeadCard`, `FirstMessageCard`, `FollowUpCard`, `ReplyCard`
+- `layout/TopNav` – Navigation (Aufgaben, Dashboard), Nutzer, Reset; `DemoBadge` unten links
+- `stack/HomeView` – Startseite: Anzahl offener Aufgaben, ein Button „Aufgaben für heute abarbeiten“
+- `stack/FocusView` – Fokus-Modus ohne Navigation: schlanke Kopfleiste (Beenden, Fortschritt, Filter),
+  darunter immer genau eine Aufgabe als ganze Seite, Übergangsanimation zur nächsten, „Erledigt“-Seite
+  - `LeadCard`, `FirstMessageCard`, `FollowUpCard`, `ReplyCard` – je eine Seite mit zwei Entscheidungen unten
   - `MessageEditor` (Textfeld mit farbig hinterlegten Variablen), `ChatThread`, `CloseExportModal`
-  - `ActivityToasts` („wird gesendet…“ → „Gesendet ✓“, mit Rückgängig)
+  - `ActivityToasts` („wird gesendet…“ → „Gesendet ✓“, mit Rückgängig; im Fokus-Modus in der Kopfleiste)
 - `lead/LeadPanel` – Seitenpanel mit vollständiger Timeline
 - `slack/SlackToast` – simulierter Slack-Ping nach ~20 s
-- `dashboard/*` – KPI-Kacheln, Linien-, Funnel-, Balkendiagramme, Vergleich Nick vs. Johannes
+- `dashboard/*` – Überblick (KPIs, Verlauf, Funnel), Templates, Nick vs. Johannes
 
 ## Tests
-Playwright-Durchlauf: Login → kompletter Stapel per Tastatur → leerer Zustand → Slack-Ping → Reset.
+Playwright-Durchlauf: Login → Startseite → alle Aufgaben per Tastatur → „Erledigt“ → Slack-Ping → Reset.

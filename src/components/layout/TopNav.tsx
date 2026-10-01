@@ -15,7 +15,7 @@ export function TopNav() {
   const open = pendingCards(state, founder.id).length;
 
   const items: { view: View; label: string; icon: ReactNode; badge?: number }[] = [
-    { view: 'stack', label: 'Tages-Stapel', icon: <Layers className="h-4 w-4" />, badge: open },
+    { view: 'home', label: 'Aufgaben', icon: <Layers className="h-4 w-4" />, badge: open },
     { view: 'dashboard', label: 'Dashboard', icon: <BarChart3 className="h-4 w-4" /> },
   ];
 

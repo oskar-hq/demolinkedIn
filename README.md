@@ -39,13 +39,17 @@ npm run test:e2e   # Playwright-Durchlauf (baut vorher selbst)
 
 ## Bedienung in der Präsentation
 
-- **Login:** Nick oder Johannes wählen – jeder sieht nur seine eigenen Karten, Nachrichten enden mit seiner Grußformel.
-- **Tages-Stapel:** `→` positive Aktion · `←` ablehnen · `E` bearbeiten · `1`–`4` Template/Variante · `V` Verlauf · `Z` rückgängig.
-  In der Close-Vorschau `↵` exportieren, `Esc` abbrechen. Im Textfeld `⌘/Strg + ↵` senden.
-- **Lead-Historie:** auf den Namen einer Karte klicken.
-- **Slack-Ping:** kommt ca. 20 Sekunden nach dem Login. Über die URL steuerbar:
+- **Login:** Nick oder Johannes wählen – jeder sieht nur seine eigenen Aufgaben, Nachrichten enden mit seiner Grußformel.
+- **Startseite:** zeigt nur, wie viele Aufgaben heute anstehen, und den Button **„Aufgaben für heute abarbeiten“** (oder `↵`).
+  Über die kleinen Zahlen darunter („3 Antworten“, „5 neue Leads“ …) lässt sich gezielt nur eine Aufgabenart abarbeiten.
+- **Fokus-Modus:** Jede Aufgabe füllt den ganzen Bildschirm, unten stehen immer genau zwei Entscheidungen.
+  `→` Ja / Senden / Vernetzen · `←` Nein / Nicht senden · `1`–`4` Template bzw. Variante · `E` bearbeiten · `V` Verlauf ·
+  `Z` rückgängig · `Esc` zurück zur Startseite. In der Close-Vorschau `↵` exportieren. Im Textfeld `⌘/Strg + ↵` senden.
+- **Lead-Historie:** auf den Namen der Person klicken.
+- **Slack-Ping:** kommt ca. 20 Sekunden nach dem Login, ein Klick öffnet direkt die neue Antwort. Über die URL steuerbar:
   `?ping=5` (nach 5 Sekunden) oder `?ping=off` (kein Ping).
-- **Dashboard:** Kennzahlen der letzten 8 Wochen, filterbar nach Gründer. Aktionen aus der laufenden Demo fließen in den heutigen Tag ein.
+- **Dashboard:** drei Ansichten – Überblick, Templates, Nick vs. Johannes – filterbar nach Gründer.
+  Aktionen aus der laufenden Demo fließen in den heutigen Tag ein.
 
 ## Inhalte anpassen
 

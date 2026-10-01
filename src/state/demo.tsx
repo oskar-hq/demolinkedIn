@@ -56,6 +56,7 @@ export type DemoAction =
   | { type: 'RESET' }
   | { type: 'SET_VIEW'; view: View }
   | { type: 'SET_FILTER'; filter: StackFilter }
+  | { type: 'START_FOCUS'; filter: StackFilter }
   | { type: 'DECIDE'; payload: DecisionPayload }
   | { type: 'UNDO' }
   | { type: 'PING_ARRIVE'; founder: FounderId }
@@ -86,7 +87,7 @@ function createInitialState(generation = 0): DemoState {
   return {
     founder: null,
     loginAt: null,
-    view: 'stack',
+    view: 'home',
     filter: 'all',
     createdAt: now,
     histories,
@@ -130,7 +131,7 @@ function append<T>(map: Record<string, T[]>, key: string, item: T): Record<strin
 function reducer(state: DemoState, action: DemoAction): DemoState {
   switch (action.type) {
     case 'LOGIN':
-      return { ...state, founder: action.founder, loginAt: Date.now(), view: 'stack', filter: 'all' };
+      return { ...state, founder: action.founder, loginAt: Date.now(), view: 'home', filter: 'all' };
 
     case 'LOGOUT':
       return { ...state, founder: null, loginAt: null, slackToast: null, panelLeadId: null };
@@ -143,6 +144,9 @@ function reducer(state: DemoState, action: DemoAction): DemoState {
 
     case 'SET_FILTER':
       return { ...state, filter: action.filter };
+
+    case 'START_FOCUS':
+      return { ...state, view: 'focus', filter: action.filter, panelLeadId: null };
 
     case 'DECIDE': {
       const { cardId, decision, event, message } = action.payload;
@@ -195,7 +199,7 @@ function reducer(state: DemoState, action: DemoAction): DemoState {
         sessionEvents: snapshot.sessionEvents,
         undoStack: state.undoStack.slice(0, -1),
         filter: filterMatches ? state.filter : 'all',
-        view: 'stack',
+        view: 'focus',
       };
     }
 
@@ -249,7 +253,7 @@ function reducer(state: DemoState, action: DemoAction): DemoState {
         ...state,
         order: moveToFront(state.order, action.cardId),
         filter: 'all',
-        view: 'stack',
+        view: 'focus',
         slackToast: null,
         panelLeadId: null,
       };

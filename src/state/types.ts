@@ -103,4 +103,5 @@ export interface CardState {
 }
 
 export type StackFilter = 'all' | CardType;
-export type View = 'stack' | 'dashboard';
+/** home = ruhige Übersicht, focus = eine Aufgabe pro Bildschirm, dashboard = Kennzahlen */
+export type View = 'home' | 'focus' | 'dashboard';

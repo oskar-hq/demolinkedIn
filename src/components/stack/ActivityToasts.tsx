@@ -1,6 +1,7 @@
 import { AnimatePresence, motion } from 'motion/react';
 import { Check, Undo2 } from 'lucide-react';
 import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
+import { cn } from '../../lib/cn';
 import { useDemo } from '../../state/demo';
 import { Kbd } from '../ui/Kbd';
 
@@ -23,6 +24,8 @@ interface PushOptions {
 interface ActivityContextValue {
   push: (options: PushOptions) => void;
   undoLatest: () => boolean;
+  /** true, solange eine Meldung sichtbar ist. */
+  busy: boolean;
 }
 
 const ActivityContext = createContext<ActivityContextValue | null>(null);
@@ -36,6 +39,7 @@ export function useActivity() {
 export function ActivityProvider({ children }: { children: ReactNode }) {
   const { state, dispatch } = useDemo();
   const [toasts, setToasts] = useState<ActivityToast[]>([]);
+  const focus = state.view === 'focus';
   const nextId = useRef(1);
   const timers = useRef<number[]>([]);
 
@@ -47,10 +51,8 @@ export function ActivityProvider({ children }: { children: ReactNode }) {
     ({ pending, done, undoable = true, duration }: PushOptions) => {
       const id = nextId.current++;
       const workTime = duration ?? 850 + Math.round(Math.random() * 450);
-      setToasts((list) => [
-        ...list.map((toast) => ({ ...toast, undoable: false })).slice(-2),
-        { id, pendingText: pending, doneText: done, status: 'pending', undoable },
-      ]);
+      // Immer nur eine Meldung gleichzeitig – die neueste ersetzt die vorherige.
+      setToasts([{ id, pendingText: pending, doneText: done, status: 'pending', undoable }]);
       timers.current.push(
         window.setTimeout(() => {
           setToasts((list) => list.map((toast) => (toast.id === id ? { ...toast, status: 'done' } : toast)));
@@ -64,36 +66,36 @@ export function ActivityProvider({ children }: { children: ReactNode }) {
   const undoLatest = useCallback(() => {
     if (state.undoStack.length === 0) return false;
     dispatch({ type: 'UNDO' });
-    setToasts((list) => {
-      const latest = [...list].reverse().find((toast) => toast.undoable);
-      return latest ? list.filter((toast) => toast.id !== latest.id) : list;
-    });
     const id = nextId.current++;
-    setToasts((list) => [
-      ...list.slice(-2),
-      { id, pendingText: '', doneText: 'Rückgängig gemacht', status: 'done', undoable: false },
-    ]);
+    setToasts([{ id, pendingText: '', doneText: 'Rückgängig gemacht', status: 'done', undoable: false }]);
     timers.current.push(window.setTimeout(() => remove(id), 1800));
     return true;
   }, [dispatch, remove, state.undoStack.length]);
 
   return (
-    <ActivityContext.Provider value={{ push, undoLatest }}>
+    <ActivityContext.Provider value={{ push, undoLatest, busy: toasts.length > 0 }}>
       {children}
       <div
         aria-live="polite"
-        className="pointer-events-none fixed inset-x-0 bottom-5 z-40 flex flex-col items-center gap-2 px-4"
+        // Im Fokus-Modus erscheint die Meldung mittig in der Kopfleiste, anstelle des Fortschritts.
+        className={cn(
+          'pointer-events-none fixed inset-x-0 z-40 flex flex-col items-center gap-2 px-4',
+          focus ? 'top-[10px]' : 'bottom-5',
+        )}
       >
         <AnimatePresence initial={false}>
           {toasts.map((toast) => (
             <motion.div
               key={toast.id}
               layout
-              initial={{ opacity: 0, y: 16, scale: 0.96 }}
+              initial={{ opacity: 0, y: focus ? -6 : 16, scale: 0.96 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: 8, scale: 0.98, transition: { duration: 0.18 } }}
+              exit={{ opacity: 0, scale: 0.98, transition: { duration: 0.15 } }}
               transition={{ type: 'spring', bounce: 0, duration: 0.4 }}
-              className="glass pointer-events-auto flex h-11 items-center gap-2.5 rounded-full border border-line-strong pl-3.5 pr-2 text-[13.5px] shadow-[0_16px_40px_-12px_rgb(0_0_0/0.8)]"
+              className={cn(
+                'pointer-events-auto flex h-11 items-center gap-2.5 rounded-full border border-line-strong pl-3.5 pr-2 text-[13.5px] shadow-[0_16px_40px_-12px_rgb(0_0_0/0.8)]',
+                focus ? 'bg-surface-3' : 'glass',
+              )}
             >
               <AnimatePresence mode="wait" initial={false}>
                 {toast.status === 'pending' ? (

@@ -1,4 +1,5 @@
-import { forwardRef, useMemo, useState } from 'react';
+import { PenLine } from 'lucide-react';
+import { forwardRef, useCallback, useMemo, useRef, useState, type ForwardedRef } from 'react';
 import { cn } from '../../lib/cn';
 import { findHighlights, type TemplateVariable } from '../../lib/template';
 import { Kbd } from '../ui/Kbd';
@@ -12,6 +13,18 @@ interface MessageEditorProps {
   label?: string;
 }
 
+function assignRef<T>(ref: ForwardedRef<T>, value: T | null) {
+  if (typeof ref === 'function') ref(value);
+  else if (ref) ref.current = value;
+}
+
+/** Cursor ans Ende setzen und Feld fokussieren. */
+export function focusAtEnd(field: HTMLTextAreaElement | null) {
+  if (!field) return;
+  field.focus();
+  field.setSelectionRange(field.value.length, field.value.length);
+}
+
 /**
  * Editierbares Nachrichtenfeld. Eine Textarea mit transparentem Text liegt exakt über einem
  * Backdrop, der denselben Text rendert – dort werden die Variablen farbig hervorgehoben.
@@ -21,6 +34,15 @@ export const MessageEditor = forwardRef<HTMLTextAreaElement, MessageEditorProps>
   ref,
 ) {
   const [focused, setFocused] = useState(false);
+  const fieldRef = useRef<HTMLTextAreaElement | null>(null);
+  const setRefs = useCallback(
+    (node: HTMLTextAreaElement | null) => {
+      fieldRef.current = node;
+      assignRef(ref, node);
+    },
+    [ref],
+  );
+
   const segments = useMemo(() => {
     const ranges = findHighlights(value, variables);
     const parts: { text: string; key?: string }[] = [];
@@ -38,13 +60,11 @@ export const MessageEditor = forwardRef<HTMLTextAreaElement, MessageEditorProps>
     <div>
       <div
         className={cn(
-          'relative rounded-2xl border bg-surface-2 transition-[border-color,box-shadow] duration-200',
-          focused
-            ? 'border-white/25 shadow-[0_0_0_4px_rgb(255_255_255/0.04)]'
-            : 'border-line hover:border-line-strong',
+          'relative rounded-[22px] border text-left transition-[border-color,background-color] duration-200',
+          focused ? 'border-white/25 bg-white/[0.05]' : 'border-transparent bg-white/[0.04] hover:bg-white/[0.055]',
         )}
       >
-        <div aria-hidden className="editor-layer min-h-[132px] text-ink">
+        <div aria-hidden className="editor-layer min-h-[140px] text-ink">
           {value.length === 0 && <span className="text-ink-3">{placeholder}</span>}
           {segments.map((part, index) =>
             part.key ? (
@@ -58,7 +78,7 @@ export const MessageEditor = forwardRef<HTMLTextAreaElement, MessageEditorProps>
           {value.endsWith('\n') && ' '}
         </div>
         <textarea
-          ref={ref}
+          ref={setRefs}
           aria-label={label}
           value={value}
           spellCheck={false}
@@ -72,31 +92,30 @@ export const MessageEditor = forwardRef<HTMLTextAreaElement, MessageEditorProps>
             }
             if (event.key === 'Escape') {
               event.preventDefault();
+              event.stopPropagation();
               event.currentTarget.blur();
             }
           }}
-          className="editor-layer editor-input absolute inset-0 h-full w-full resize-none overflow-hidden rounded-2xl bg-transparent outline-none"
+          className="editor-layer editor-input absolute inset-0 h-full w-full resize-none overflow-hidden rounded-[22px] bg-transparent outline-none"
         />
       </div>
-      <div className="mt-2.5 flex flex-wrap items-center justify-between gap-2 text-[12px] text-ink-3">
-        <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-          {variables
-            .filter((variable) => variable.key !== 'grussformel' && value.includes(variable.value))
-            .map((variable) => (
-              <span key={variable.key} className="inline-flex items-center gap-1.5">
-                <span className="h-1.5 w-1.5 rounded-full bg-accent" />
-                {variable.label}
-              </span>
-            ))}
-        </div>
-        <div className="flex items-center gap-3">
-          {focused ? (
-            <span className="hidden items-center gap-1.5 md:inline-flex">
-              <Kbd>⌘ ↵</Kbd> senden <Kbd>Esc</Kbd> fertig
-            </span>
-          ) : null}
-          <span className="tabular-nums">{value.length} Zeichen</span>
-        </div>
+      <div className="mt-3 flex items-center justify-between gap-3 px-1 text-[12.5px] text-ink-3">
+        {focused ? (
+          <span className="inline-flex items-center gap-1.5">
+            <Kbd>⌘ ↵</Kbd> senden <Kbd>Esc</Kbd> fertig
+          </span>
+        ) : (
+          <button
+            type="button"
+            onClick={() => focusAtEnd(fieldRef.current)}
+            className="-ml-2 inline-flex h-8 items-center gap-1.5 rounded-full px-2 text-ink-2 transition-colors hover:bg-white/[0.06] hover:text-ink"
+          >
+            <PenLine className="h-3.5 w-3.5" />
+            Bearbeiten
+            <Kbd>E</Kbd>
+          </button>
+        )}
+        <span className="tabular-nums">{value.length} Zeichen</span>
       </div>
     </div>
   );

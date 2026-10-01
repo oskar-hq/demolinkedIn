@@ -1,4 +1,4 @@
-import { Briefcase, Megaphone, PenLine, Send, UserCheck } from 'lucide-react';
+import { Briefcase, Megaphone, Send } from 'lucide-react';
 import { useIsPresent } from 'motion/react';
 import { useMemo, useRef, useState } from 'react';
 import { FIRST_MESSAGE_TEMPLATES } from '../../data/templates';
@@ -11,8 +11,8 @@ import type { TemplateId } from '../../state/types';
 import { Button } from '../ui/Button';
 import { Pill } from '../ui/Pill';
 import { Segmented } from '../ui/Segmented';
-import { CardShell, FooterSpacer, LeadRow, SectionLabel } from './CardParts';
-import { MessageEditor } from './MessageEditor';
+import { Eyebrow, FocusPage, PersonHeader } from './FocusParts';
+import { MessageEditor, focusAtEnd } from './MessageEditor';
 import type { CardProps } from './cardTypes';
 
 export function FirstMessageCard({ card, onDecide, onOpenLead, hotkeysEnabled }: CardProps) {
@@ -30,13 +30,6 @@ export function FirstMessageCard({ card, onDecide, onOpenLead, hotkeysEnabled }:
   const chooseTemplate = (id: TemplateId) => {
     setTemplateId(id);
     setText(fillTemplate(FIRST_MESSAGE_TEMPLATES[id].text, variables));
-  };
-
-  const edit = () => {
-    const field = editorRef.current;
-    if (!field) return;
-    field.focus();
-    field.setSelectionRange(field.value.length, field.value.length);
   };
 
   const send = () => {
@@ -66,74 +59,68 @@ export function FirstMessageCard({ card, onDecide, onOpenLead, hotkeysEnabled }:
     {
       arrowright: send,
       arrowleft: skip,
-      e: edit,
+      e: () => focusAtEnd(editorRef.current),
       ...(isMeta ? { '1': () => chooseTemplate('A'), '2': () => chooseTemplate('B') } : {}),
     },
     hotkeysEnabled && present,
   );
 
   return (
-    <CardShell
-      typeLabel="Erstnachricht"
-      typeIcon={<Send />}
-      meta={
+    <FocusPage
+      actions={
         <>
-          <UserCheck />
-          Anfrage angenommen {formatRelative(acceptedAt ?? Date.now())}
-        </>
-      }
-      footer={
-        <>
-          <Button variant="outline" size="lg" shortcut="←" shortcutPosition="start" onClick={skip}>
+          <Button variant="outline" size="xl" shortcut="←" shortcutPosition="start" onClick={skip} className="w-full">
             Nicht senden
           </Button>
-          <FooterSpacer />
-          <Button variant="ghost" size="lg" shortcut="E" onClick={edit} icon={<PenLine className="h-4 w-4" />}>
-            Bearbeiten
-          </Button>
-          <Button variant="primary" size="lg" shortcut="→" onClick={send} disabled={!text.trim()} icon={<Send className="h-4 w-4" />}>
+          <Button
+            variant="primary"
+            size="xl"
+            shortcut="→"
+            onClick={send}
+            disabled={!text.trim()}
+            icon={<Send className="h-4 w-4" />}
+            className="w-full"
+          >
             Senden
           </Button>
         </>
       }
     >
-      <LeadRow
+      <Eyebrow>Erstnachricht</Eyebrow>
+      <PersonHeader
         lead={lead}
+        avatarSize={60}
         onOpen={() => onOpenLead(lead.id)}
-        aside={
-          <Pill dot={false} icon={isMeta ? <Megaphone /> : <Briefcase />} className="border-white/15 bg-white/[0.07]">
-            {signalLabel(lead.signal)}
-          </Pill>
-        }
-      />
+        subtitle={`Anfrage angenommen ${formatRelative(acceptedAt ?? Date.now())}`}
+      >
+        <Pill dot={false} icon={isMeta ? <Megaphone /> : <Briefcase />}>
+          {signalLabel(lead.signal)}
+        </Pill>
+      </PersonHeader>
 
-      <div className="mt-6 flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <SectionLabel>Vorbefüllte Nachricht</SectionLabel>
-          {isMeta ? (
-            <Segmented
-              ariaLabel="Template wählen"
-              size="sm"
-              value={templateId}
-              onChange={chooseTemplate}
-              options={[
-                { value: 'A', label: 'Template A', shortcut: '1' },
-                { value: 'B', label: 'Template B', shortcut: '2' },
-              ]}
-            />
-          ) : (
-            <Pill tone="accent">Template C · Recruiting</Pill>
-          )}
-        </div>
-        <p className="text-[12.5px] text-ink-3">
+      <div className="mt-10 flex flex-col items-center">
+        {isMeta ? (
+          <Segmented
+            ariaLabel="Template wählen"
+            value={templateId}
+            onChange={chooseTemplate}
+            options={[
+              { value: 'A', label: 'Template A', shortcut: '1' },
+              { value: 'B', label: 'Template B', shortcut: '2' },
+            ]}
+          />
+        ) : (
+          <Pill tone="accent">Template C · Recruiting</Pill>
+        )}
+        <p className="mt-2.5 text-[12.5px] text-ink-3">
           {template.description}
-          {edited && <span className="ml-2 text-ink-2">· bearbeitet</span>}
+          {edited && ' · bearbeitet'}
         </p>
       </div>
 
-      <div className="mt-3">
+      <div className="mt-5">
         <MessageEditor ref={editorRef} value={text} onChange={setText} variables={variables} onSubmit={send} />
       </div>
-    </CardShell>
+    </FocusPage>
   );
 }

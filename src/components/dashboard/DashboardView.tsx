@@ -52,8 +52,11 @@ function useLiveAdds(): Record<FounderId, LiveAdds> {
   }, [state.cards, state.pinged]);
 }
 
+type Section = 'overview' | 'templates' | 'team';
+
 export function DashboardView() {
   const [scope, setScope] = useState<Scope>('all');
+  const [section, setSection] = useState<Section>('overview');
   const live = useLiveAdds();
   const days = useMemo(() => dailyFor(scope, live), [scope, live]);
   const visible = days.slice(-VISIBLE_DAYS);
@@ -110,67 +113,87 @@ export function DashboardView() {
 
   return (
     <div className="mx-auto w-full max-w-[1240px] px-4 pb-28 pt-8 sm:px-6 sm:pt-12">
-      <header className="mb-8 flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <p className="text-[13px] font-medium text-ink-3">Letzte 8 Wochen · aktualisiert {formatTime(Date.now())} Uhr</p>
-          <h1 className="display mt-1.5 text-[34px] font-semibold sm:text-[44px]">Dashboard</h1>
-        </div>
-        <Segmented
-          ariaLabel="Gründer filtern"
-          value={scope}
-          onChange={setScope}
-          options={[
-            { value: 'all', label: 'Gesamt' },
-            { value: 'nick', label: 'Nick' },
-            { value: 'johannes', label: 'Johannes' },
-          ]}
-        />
+      <header className="mb-8">
+        <p className="text-[13px] font-medium text-ink-3">Letzte 8 Wochen · aktualisiert {formatTime(Date.now())} Uhr</p>
+        <h1 className="display mt-1.5 text-[34px] font-semibold sm:text-[44px]">Dashboard</h1>
       </header>
 
+      <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+        <Segmented
+          ariaLabel="Ansicht wählen"
+          value={section}
+          onChange={setSection}
+          options={[
+            { value: 'overview', label: 'Überblick' },
+            { value: 'templates', label: 'Templates' },
+            { value: 'team', label: 'Nick vs. Johannes' },
+          ]}
+        />
+        {section !== 'team' && (
+          <Segmented
+            ariaLabel="Gründer filtern"
+            size="sm"
+            value={scope}
+            onChange={setScope}
+            options={[
+              { value: 'all', label: 'Gesamt' },
+              { value: 'nick', label: 'Nick' },
+              { value: 'johannes', label: 'Johannes' },
+            ]}
+          />
+        )}
+      </div>
+
       <motion.div
-        key={scope}
-        initial={{ opacity: 0.4 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.3 }}
+        key={`${section}-${scope}`}
+        initial={{ opacity: 0, y: 6 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3, ease: [0.25, 1, 0.5, 1] }}
         className="space-y-4"
       >
-        <div className="grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-5">
-          {kpis.map((kpi) => (
-            <KpiTile key={kpi.label} {...kpi} caption="vs. Vorwoche" />
-          ))}
-        </div>
+        {section === 'overview' && (
+          <>
+            <div className="grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-5">
+              {kpis.map((kpi) => (
+                <KpiTile key={kpi.label} {...kpi} caption="vs. Vorwoche" />
+              ))}
+            </div>
 
-        <div className="grid gap-4 lg:grid-cols-3">
-          <ChartCard
-            className="lg:col-span-2"
-            title="Anfragen und Antworten pro Tag"
-            subtitle={`${formatInt(total.requests)} Anfragen · ${formatInt(total.replies)} Antworten in 8 Wochen`}
-            legend={
-              <Legend>
-                <LegendKey color={CHART.primary} label="Anfragen" />
-                <LegendKey color={CHART.accent} label="Antworten" />
-              </Legend>
-            }
-          >
-            <ActivityChart days={visible} />
-          </ChartCard>
+            <div className="grid gap-4 lg:grid-cols-3">
+              <ChartCard
+                className="lg:col-span-2"
+                title="Anfragen und Antworten pro Tag"
+                subtitle={`${formatInt(total.requests)} Anfragen · ${formatInt(total.replies)} Antworten in 8 Wochen`}
+                legend={
+                  <Legend>
+                    <LegendKey color={CHART.primary} label="Anfragen" />
+                    <LegendKey color={CHART.accent} label="Antworten" />
+                  </Legend>
+                }
+              >
+                <ActivityChart days={visible} />
+              </ChartCard>
 
-          <ChartCard title="Funnel" subtitle="Vom Lead zum Termin · 8 Wochen">
-            <Funnel stages={funnel} />
-          </ChartCard>
-        </div>
+              <ChartCard title="Funnel" subtitle="Vom Lead zum Termin · 8 Wochen">
+                <Funnel stages={funnel} />
+              </ChartCard>
+            </div>
+          </>
+        )}
 
-        <div className="grid gap-4 md:grid-cols-2">
-          <ChartCard title="Antwortquote je Template" subtitle="Inklusive Follow-ups · bestes Template hervorgehoben">
-            <RateBarChart data={templateStats(scope)} ariaLabel="Säulendiagramm: Antwortquote je Template A, B und C" />
-          </ChartCard>
-          <ChartCard title="Antwortquote je Follow-up-Stufe" subtitle="Anteil der Angeschriebenen, die nach dieser Stufe antworten">
-            <RateBarChart data={stageStats(scope)} ariaLabel="Säulendiagramm: Antwortquote je Follow-up-Stufe" />
-          </ChartCard>
-        </div>
+        {section === 'templates' && (
+          <div className="grid gap-4 md:grid-cols-2">
+            <ChartCard title="Antwortquote je Template" subtitle="Inklusive Follow-ups · bestes Template hervorgehoben">
+              <RateBarChart data={templateStats(scope)} ariaLabel="Säulendiagramm: Antwortquote je Template A, B und C" />
+            </ChartCard>
+            <ChartCard title="Antwortquote je Follow-up-Stufe" subtitle="Anteil der Angeschriebenen, die nach dieser Stufe antworten">
+              <RateBarChart data={stageStats(scope)} ariaLabel="Säulendiagramm: Antwortquote je Follow-up-Stufe" />
+            </ChartCard>
+          </div>
+        )}
+
+        {section === 'team' && <FounderComparison />}
       </motion.div>
-
-      <FounderComparison />
     </div>
   );
 }
@@ -246,11 +269,7 @@ function FounderComparison() {
   );
 
   return (
-    <div className="mt-10">
-      <div className="mb-4">
-        <h2 className="display text-[26px] font-semibold">Nick vs. Johannes</h2>
-        <p className="mt-1 text-[13.5px] text-ink-3">Beide LinkedIn-Accounts im Vergleich · letzte 8 Wochen · unabhängig vom Filter</p>
-      </div>
+    <div>
       <div className="grid gap-4 lg:grid-cols-5">
         <ChartCard className="lg:col-span-2" title="Kennzahlen" legend={legend}>
           <div className="space-y-4">
