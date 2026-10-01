@@ -1,6 +1,10 @@
 services:
   outreach-cockpit:
-    build: .
+    build:
+      context: .
+      # Build nutzt direkt das Netzwerk des Servers – vermeidet DNS-/Netzwerkprobleme
+      # beim Paket-Download, z. B. wenn Docker in einem Proxmox-LXC-Container läuft.
+      network: host
     image: outreach-cockpit-demo:latest
     container_name: outreach-cockpit-demo
     ports:
