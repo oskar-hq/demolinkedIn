@@ -138,7 +138,7 @@ export function StackView() {
               transition={{ type: 'spring', bounce: 0, duration: 0.6 }}
             />
           </div>
-          <span className="w-9 text-right text-[12.5px] tabular-nums text-ink-3">{Math.round(progress * 100)} %</span>
+          <span className="w-11 whitespace-nowrap text-right text-[12.5px] tabular-nums text-ink-3">{Math.round(progress * 100)} %</span>
         </div>
       </div>
 
@@ -158,7 +158,7 @@ export function StackView() {
           <div aria-hidden className="pointer-events-none absolute inset-x-10 -bottom-5 h-12 rounded-b-[24px] border border-t-0 border-line bg-surface-1/40" />
         )}
 
-        <div className="grid">
+        <div className="grid grid-cols-[minmax(0,1fr)]">
           <AnimatePresence custom={direction} initial={false}>
             {current && CardComponent ? (
               <motion.div

@@ -1,0 +1,8 @@
+services:
+  outreach-cockpit:
+    build: .
+    image: outreach-cockpit-demo:latest
+    container_name: outreach-cockpit-demo
+    ports:
+      - "8080:80"
+    restart: unless-stopped

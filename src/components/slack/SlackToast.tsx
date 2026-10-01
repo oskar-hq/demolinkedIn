@@ -1,5 +1,6 @@
 import { AnimatePresence, motion } from 'motion/react';
 import { X } from 'lucide-react';
+import { useEffect, useState } from 'react';
 import { FOUNDERS } from '../../data/founders';
 import { LEADS_BY_ID } from '../../data/leads';
 import { fullName } from '../../lib/leadInfo';
@@ -21,6 +22,14 @@ export function SlackToast() {
   const { state, dispatch } = useDemo();
   const toast = state.slackToast;
   const lead = toast ? LEADS_BY_ID[toast.leadId] : null;
+  const [hovered, setHovered] = useState(false);
+
+  // Wie eine echte Benachrichtigung: verschwindet nach einer Weile von selbst (nicht während Hover).
+  useEffect(() => {
+    if (!toast || hovered) return;
+    const timer = window.setTimeout(() => dispatch({ type: 'DISMISS_SLACK' }), 15_000);
+    return () => window.clearTimeout(timer);
+  }, [toast, hovered, dispatch]);
 
   return (
     <div className="pointer-events-none fixed right-4 top-[72px] z-[25] w-[calc(100%-2rem)] max-w-[380px]">
@@ -38,6 +47,8 @@ export function SlackToast() {
               role="button"
               tabIndex={0}
               data-testid="slack-toast"
+              onMouseEnter={() => setHovered(true)}
+              onMouseLeave={() => setHovered(false)}
               onClick={() => dispatch({ type: 'FOCUS_CARD', cardId: lead.id })}
               onKeyDown={(event) => {
                 if (event.key === 'Enter') dispatch({ type: 'FOCUS_CARD', cardId: lead.id });

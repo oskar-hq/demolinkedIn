@@ -72,42 +72,78 @@ function mulberry32(seed: number) {
   };
 }
 
-function binomial(n: number, p: number, random: () => number): number {
-  let hits = 0;
-  for (let i = 0; i < n; i++) if (random() < p) hits++;
-  return hits;
-}
-
 function startOfToday(): Date {
   const date = new Date();
   date.setHours(12, 0, 0, 0);
   return date;
 }
 
+const WEEKS = TOTAL_DAYS / 7;
+/** Gewichtung je Wochentag (So = 0). Outreach läuft am Wochenende gedrosselt weiter. */
+const WEEKDAY_WEIGHT = [0.66, 1.06, 1, 1, 1, 0.96, 0.74];
+
+/** Verteilt eine Wochensumme ganzzahlig auf die Tage (Largest-Remainder-Verfahren). */
+function distribute(total: number, weights: number[]): number[] {
+  const sum = weights.reduce((a, b) => a + b, 0);
+  const exact = weights.map((weight) => (total * weight) / sum);
+  const result = exact.map(Math.floor);
+  let rest = total - result.reduce((a, b) => a + b, 0);
+  const order = exact.map((value, index) => ({ index, frac: value - Math.floor(value) })).sort((a, b) => b.frac - a.frac);
+  for (const { index } of order) {
+    if (rest-- <= 0) break;
+    result[index]++;
+  }
+  return result;
+}
+
+/**
+ * Erst Wochensummen mit stetigem Aufwärtstrend (die aktuelle Woche liegt immer über der Vorwoche),
+ * dann Verteilung auf Tage mit leichtem Rauschen.
+ */
 function generate(founder: FounderId): DayStat[] {
   const profile = PROFILES[founder];
   const random = mulberry32(profile.seed);
+  const noise = (amount: number) => (random() * 2 - 1) * amount;
   const today = startOfToday();
   const days: DayStat[] = [];
 
-  for (let i = TOTAL_DAYS - 1; i >= 0; i--) {
-    const date = new Date(today);
-    date.setDate(today.getDate() - i);
-    const t = (TOTAL_DAYS - 1 - i) / (TOTAL_DAYS - 1);
-    const weekday = date.getDay();
-    const weekdayFactor = weekday === 0 ? 0.42 : weekday === 6 ? 0.55 : weekday === 1 ? 1.08 : 1;
-    const growth = 0.82 + 0.3 * t;
-    const requests = Math.round(profile.baseRequests * weekdayFactor * growth * (0.82 + random() * 0.36));
-    const acceptRate = profile.acceptStart + (profile.acceptEnd - profile.acceptStart) * t;
-    const replyRate = profile.replyStart + (profile.replyEnd - profile.replyStart) * t;
-    // Annahmen und Nachrichten hängen an früheren Anfragen – hier vereinfacht über das aktuelle Volumen.
-    const workload = Math.round(profile.baseRequests * weekdayFactor * growth * (0.85 + random() * 0.3));
-    const accepted = binomial(workload, acceptRate, random);
-    const messaged = Math.round(accepted * (0.9 + random() * 0.08));
-    const replies = binomial(messaged, replyRate, random);
-    const meetings = binomial(replies, profile.meetingRate, random);
-    const exports = Math.max(meetings, binomial(replies, profile.exportRate, random));
-    days.push({ date: date.getTime(), requests, accepted, messaged, replies, meetings, exports });
+  for (let week = 0; week < WEEKS; week++) {
+    const t = week / (WEEKS - 1);
+    const isLast = week === WEEKS - 1;
+    const isSecondLast = week === WEEKS - 2;
+    // Rauschen der letzten beiden Wochen festlegen, damit der Vorwochenvergleich positiv ausfällt.
+    const volumeNoise = isLast ? 0.05 : isSecondLast ? -0.02 : noise(0.04);
+    const rateNoise = isLast ? 0.004 : isSecondLast ? -0.003 : noise(0.006);
+
+    const requests = Math.round(profile.baseRequests * 6.02 * (0.78 + 0.34 * t) * (1 + volumeNoise));
+    const acceptRate = profile.acceptStart + (profile.acceptEnd - profile.acceptStart) * t + rateNoise;
+    const replyRate = profile.replyStart + (profile.replyEnd - profile.replyStart) * t + rateNoise;
+    const accepted = Math.round(requests * acceptRate);
+    const messaged = Math.round(accepted * 0.93);
+    const replies = Math.round(messaged * replyRate);
+    const meetings = Math.round(replies * (profile.meetingRate + (isLast ? 0.05 : isSecondLast ? -0.03 : noise(0.1))));
+    const exports = Math.max(meetings, Math.round(replies * (profile.exportRate + (isLast ? 0.04 : noise(0.08)))));
+
+    const dates: Date[] = [];
+    for (let d = 0; d < 7; d++) {
+      const date = new Date(today);
+      date.setDate(today.getDate() - (TOTAL_DAYS - 1 - (week * 7 + d)));
+      dates.push(date);
+    }
+    const weights = dates.map((date) => WEEKDAY_WEIGHT[date.getDay()] * (1 + noise(0.12)));
+    const split = (total: number) => distribute(total, weights);
+    const [r, a, m, rep, meet, exp] = [requests, accepted, messaged, replies, meetings, exports].map(split);
+    dates.forEach((date, d) =>
+      days.push({
+        date: date.getTime(),
+        requests: r[d],
+        accepted: a[d],
+        messaged: m[d],
+        replies: rep[d],
+        meetings: meet[d],
+        exports: exp[d],
+      }),
+    );
   }
   return days;
 }

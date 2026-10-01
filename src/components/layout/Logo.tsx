@@ -1,3 +1,5 @@
+import { cn } from '../../lib/cn';
+
 export function LogoMark({ size = 24 }: { size?: number }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" aria-hidden>
@@ -7,11 +9,13 @@ export function LogoMark({ size = 24 }: { size?: number }) {
   );
 }
 
-export function Logo() {
+export function Logo({ alwaysShowName = false }: { alwaysShowName?: boolean }) {
   return (
     <div className="flex items-center gap-2 text-ink">
       <LogoMark />
-      <span className="text-[15px] font-semibold tracking-[-0.02em]">Outreach Cockpit</span>
+      <span className={cn('whitespace-nowrap text-[15px] font-semibold tracking-[-0.02em]', !alwaysShowName && 'hidden sm:inline')}>
+        Outreach Cockpit
+      </span>
     </div>
   );
 }

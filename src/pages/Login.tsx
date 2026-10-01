@@ -26,7 +26,7 @@ export function Login() {
       </div>
 
       <header className="relative z-10 flex h-16 items-center px-6">
-        <Logo />
+        <Logo alwaysShowName />
       </header>
 
       <main className="relative z-10 flex flex-1 flex-col items-center justify-center px-4 pb-32 pt-6">

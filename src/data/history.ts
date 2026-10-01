@@ -37,7 +37,7 @@ export function buildHistory(lead: Lead, now: number): LeadHistory {
   } else {
     let ownMessageTimes: number[] = [];
     if (lead.stage === 'first') {
-      acceptedAt = now - 23 * HOUR - jitter('accept', 50);
+      acceptedAt = now - 25 * HOUR - jitter('accept', 50);
     } else {
       const count = 1 + (lead.followUps?.length ?? 0);
       let last: number;

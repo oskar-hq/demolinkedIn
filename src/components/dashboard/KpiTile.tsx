@@ -24,7 +24,7 @@ function Sparkline({ values }: { values: number[] }) {
   const path = points.map(([x, y], index) => `${index ? 'L' : 'M'}${x.toFixed(1)},${y.toFixed(1)}`).join(' ');
   const [lastX, lastY] = points[points.length - 1];
   return (
-    <svg viewBox={`0 0 ${width} ${height}`} className="h-8 w-[96px] shrink-0" aria-hidden>
+    <svg viewBox={`0 0 ${width} ${height}`} className="hidden h-8 w-[96px] shrink-0 sm:block" aria-hidden>
       <path d={path} fill="none" stroke="rgba(255,255,255,0.28)" strokeWidth={1.5} strokeLinejoin="round" strokeLinecap="round" />
       <circle cx={lastX} cy={lastY} r={4} fill={CHART.accent} stroke={CHART.surface} strokeWidth={2} />
     </svg>
@@ -38,7 +38,7 @@ export function KpiTile({ label, value, delta, up, caption, trend }: KpiTileProp
       <p className="display mt-3 text-[34px] font-semibold">{value}</p>
       <div className="mt-3 flex items-end justify-between gap-2">
         <div className="min-w-0">
-          <p className="flex items-center gap-1 text-[12.5px] font-medium text-ink">
+          <p className="flex items-center gap-1 whitespace-nowrap text-[12.5px] font-medium text-ink">
             <span
               className={cn(
                 'flex h-4 w-4 items-center justify-center rounded-full',

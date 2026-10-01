@@ -126,11 +126,10 @@ export function RateBarChart({ data, ariaLabel }: { data: RateStat[]; ariaLabel:
             <LabelList
               dataKey="value"
               content={(props) => {
-                const x = Number(props.x ?? 0);
-                const y = Number(props.y ?? 0);
-                const width = Number(props.width ?? 0);
+                const box = props.viewBox as { x?: number; y?: number; width?: number } | undefined;
+                if (!box || box.x === undefined || box.y === undefined) return '';
                 return (
-                  <text x={x + width / 2} y={y - 8} textAnchor="middle" fill="#f5f5f7" fontSize={12} fontWeight={600}>
+                  <text x={box.x + (box.width ?? 0) / 2} y={box.y - 8} textAnchor="middle" fill="#f5f5f7" fontSize={12} fontWeight={600}>
                     {formatPercent(Number(props.value) / 100)}
                   </text>
                 );
@@ -153,7 +152,7 @@ export interface WeekCompare {
 
 export function WeeklyCompareChart({ data }: { data: WeekCompare[] }) {
   return (
-    <div className="h-[240px]" role="img" aria-label="Säulendiagramm: Termine pro Woche, Nick und Johannes">
+    <div className="h-[300px]" role="img" aria-label="Säulendiagramm: Termine pro Woche, Nick und Johannes">
       <ResponsiveContainer width="100%" height="100%">
         <BarChart data={data} margin={{ top: 8, right: 4, bottom: 0, left: -24 }} barGap={2}>
           <CartesianGrid vertical={false} stroke={CHART.grid} />
