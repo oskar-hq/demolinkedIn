@@ -81,7 +81,7 @@ export function ReplyCard({ card, onDecide, onOpenLead, hotkeysEnabled }: CardPr
           {fresh && <span className="mr-2 rounded-full bg-accent px-2 py-0.5 text-[11px] font-semibold tracking-normal text-white normal-case">Neu</span>}
           Antwort erhalten{latestReply ? ` · ${formatRelative(latestReply.at)}` : ''}
         </Eyebrow>
-        <PersonHeader lead={lead} avatarSize={60} onOpen={() => onOpenLead(lead.id)} />
+        <PersonHeader lead={lead} compact onOpen={() => onOpenLead(lead.id)} />
 
         {assessment && (
           <div className="mt-6 flex flex-col items-center text-center">

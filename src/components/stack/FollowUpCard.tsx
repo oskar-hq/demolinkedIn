@@ -12,7 +12,7 @@ import { Button } from '../ui/Button';
 import { Kbd } from '../ui/Kbd';
 import { Segmented } from '../ui/Segmented';
 import { ChatThread } from './ChatThread';
-import { Eyebrow, FocusPage, PersonHeader } from './FocusParts';
+import { AiSummary, Eyebrow, FocusPage, PersonHeader } from './FocusParts';
 import { MessageEditor, focusAtEnd } from './MessageEditor';
 import type { CardProps } from './cardTypes';
 
@@ -105,12 +105,13 @@ export function FollowUpCard({ card, onDecide, onOpenLead, hotkeysEnabled }: Car
       </Eyebrow>
       <PersonHeader
         lead={lead}
-        avatarSize={60}
+        compact
         onOpen={() => onOpenLead(lead.id)}
         subtitle={`Keine Antwort seit ${silentDays} ${silentDays === 1 ? 'Tag' : 'Tagen'} – Follow-up ${stage} von ${MAX_FOLLOW_UPS}`}
       />
+      <AiSummary text={lead.summary} />
 
-      <div className="mt-6 flex flex-col items-center">
+      <div className="mt-4 flex flex-col items-center">
         <button
           type="button"
           onClick={() => setHistoryOpen((open) => !open)}
@@ -138,7 +139,7 @@ export function FollowUpCard({ card, onDecide, onOpenLead, hotkeysEnabled }: Car
         )}
       </AnimatePresence>
 
-      <div className="mt-8 flex flex-col items-center">
+      <div className="mt-6 flex flex-col items-center">
         <Segmented
           ariaLabel="Follow-up-Variante"
           value={variant}
@@ -156,7 +157,7 @@ export function FollowUpCard({ card, onDecide, onOpenLead, hotkeysEnabled }: Car
         </p>
       </div>
 
-      <div className="mt-5">
+      <div className="mt-4">
         <MessageEditor
           ref={editorRef}
           value={text}

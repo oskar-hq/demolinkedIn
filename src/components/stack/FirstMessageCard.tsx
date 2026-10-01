@@ -11,7 +11,7 @@ import type { TemplateId } from '../../state/types';
 import { Button } from '../ui/Button';
 import { Pill } from '../ui/Pill';
 import { Segmented } from '../ui/Segmented';
-import { Eyebrow, FocusPage, PersonHeader } from './FocusParts';
+import { AiSummary, Eyebrow, FocusPage, PersonHeader } from './FocusParts';
 import { MessageEditor, focusAtEnd } from './MessageEditor';
 import type { CardProps } from './cardTypes';
 
@@ -89,16 +89,17 @@ export function FirstMessageCard({ card, onDecide, onOpenLead, hotkeysEnabled }:
       <Eyebrow>Erstnachricht</Eyebrow>
       <PersonHeader
         lead={lead}
-        avatarSize={60}
+        compact
         onOpen={() => onOpenLead(lead.id)}
-        subtitle={`Anfrage angenommen ${formatRelative(acceptedAt ?? Date.now())}`}
+        subtitle={`${lead.industry} · ${lead.region} · Anfrage angenommen ${formatRelative(acceptedAt ?? Date.now())}`}
       >
         <Pill dot={false} icon={isMeta ? <Megaphone /> : <Briefcase />}>
           {signalLabel(lead.signal)}
         </Pill>
       </PersonHeader>
+      <AiSummary text={lead.summary} />
 
-      <div className="mt-10 flex flex-col items-center">
+      <div className="mt-6 flex flex-col items-center">
         {isMeta ? (
           <Segmented
             ariaLabel="Template wählen"
@@ -118,7 +119,7 @@ export function FirstMessageCard({ card, onDecide, onOpenLead, hotkeysEnabled }:
         </p>
       </div>
 
-      <div className="mt-5">
+      <div className="mt-4">
         <MessageEditor ref={editorRef} value={text} onChange={setText} variables={variables} onSubmit={send} />
       </div>
     </FocusPage>
