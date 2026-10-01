@@ -33,7 +33,8 @@ async function processCurrentCard(page: Page, index: number) {
   switch (type) {
     case 'reply':
       if (positive) {
-        await page.keyboard.press('ArrowRight');
+        // Enter öffnet die Close-Vorschau, ein zweites Enter exportiert
+        await page.keyboard.press('Enter');
         await expect(page.getByRole('dialog')).toContainText('Export nach Close');
         await page.keyboard.press('Enter');
       } else {
@@ -42,7 +43,7 @@ async function processCurrentCard(page: Page, index: number) {
       break;
     case 'followup':
       await page.keyboard.press('2');
-      await page.keyboard.press(positive ? 'ArrowRight' : 'ArrowLeft');
+      await page.keyboard.press(positive ? 'Enter' : 'ArrowLeft');
       break;
     case 'first':
       if (positive) {
@@ -54,7 +55,7 @@ async function processCurrentCard(page: Page, index: number) {
       }
       break;
     default:
-      await page.keyboard.press(positive ? 'ArrowRight' : 'ArrowLeft');
+      await page.keyboard.press(positive ? 'Enter' : 'ArrowLeft');
   }
   await expect(page.locator(`[data-card-id="${id}"]`)).toHaveCount(0);
   return type;

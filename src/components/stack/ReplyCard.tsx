@@ -52,7 +52,12 @@ export function ReplyCard({ card, onDecide, onOpenLead, hotkeysEnabled }: CardPr
     });
 
   useHotkeys(
-    { arrowright: () => setExportOpen(true), arrowleft: discard, v: () => setHistoryOpen((open) => !open) },
+    {
+      enter: () => setExportOpen(true),
+      arrowright: () => setExportOpen(true),
+      arrowleft: discard,
+      v: () => setHistoryOpen((open) => !open),
+    },
     hotkeysEnabled && present && !exportOpen,
   );
   useSwipeActions({
@@ -78,7 +83,7 @@ export function ReplyCard({ card, onDecide, onOpenLead, hotkeysEnabled }: CardPr
             <Button
               variant="primary"
               size="xl"
-              shortcut="→"
+              shortcut="↵"
               onClick={() => setExportOpen(true)}
               icon={<ArrowUpRight className="h-4 w-4" />}
               className="w-full"

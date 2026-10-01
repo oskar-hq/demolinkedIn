@@ -44,7 +44,7 @@ npm run test:e2e   # Playwright-Durchlauf (baut vorher selbst)
   Über die kleinen Zahlen darunter („3 Antworten“, „5 neue Leads“ …) lässt sich gezielt nur eine Aufgabenart abarbeiten.
 - **Fokus-Modus:** Jede Aufgabe füllt den ganzen Bildschirm, unten stehen immer genau zwei Entscheidungen.
   Alternativ die Seite wie eine Karte **nach rechts (Ja) oder links (Nein) wischen** – mit Maus, Trackpad oder Finger.
-  `→` Ja / Senden / Vernetzen · `←` Nein / Nicht senden · `1`–`4` Template bzw. Variante · `E` bearbeiten · `V` Verlauf ·
+  `↵` (oder `→`) Ja / Senden / Vernetzen · `←` Nein / Nicht senden · `1`–`4` Template bzw. Variante · `E` bearbeiten · `V` Verlauf ·
   `Z` rückgängig · `Esc` zurück zur Startseite. In der Close-Vorschau `↵` exportieren. Im Textfeld `⌘/Strg + ↵` senden.
 - **Lead-Historie:** auf den Namen der Person klicken.
 - **Slack-Ping:** kommt ca. 20 Sekunden nach dem Login, ein Klick öffnet direkt die neue Antwort. Über die URL steuerbar:

@@ -39,7 +39,7 @@ export function LeadCard({ card, onDecide, onOpenLead, hotkeysEnabled }: CardPro
       toast: { pending: 'Lead wird aussortiert…', done: 'Als nicht geeignet markiert' },
     });
 
-  useHotkeys({ arrowright: connect, arrowleft: reject }, hotkeysEnabled && present);
+  useHotkeys({ enter: connect, arrowright: connect, arrowleft: reject }, hotkeysEnabled && present);
   useSwipeActions({ right: { label: 'Vernetzen', run: connect }, left: { label: 'Nicht geeignet', run: reject } });
 
   return (
@@ -49,7 +49,7 @@ export function LeadCard({ card, onDecide, onOpenLead, hotkeysEnabled }: CardPro
           <Button variant="outline" size="xl" shortcut="←" shortcutPosition="start" onClick={reject} className="w-full">
             Nicht geeignet
           </Button>
-          <Button variant="primary" size="xl" shortcut="→" onClick={connect} icon={<UserPlus className="h-4 w-4" />} className="w-full">
+          <Button variant="primary" size="xl" shortcut="↵" onClick={connect} icon={<UserPlus className="h-4 w-4" />} className="w-full">
             Vernetzen
           </Button>
         </>

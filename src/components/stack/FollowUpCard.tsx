@@ -68,6 +68,7 @@ export function FollowUpCard({ card, onDecide, onOpenLead, hotkeysEnabled }: Car
 
   useHotkeys(
     {
+      enter: send,
       arrowright: send,
       arrowleft: skip,
       e: () => focusAtEnd(editorRef.current),
@@ -94,7 +95,7 @@ export function FollowUpCard({ card, onDecide, onOpenLead, hotkeysEnabled }: Car
           <Button
             variant="primary"
             size="xl"
-            shortcut="→"
+            shortcut="↵"
             onClick={send}
             disabled={!text.trim()}
             icon={<Send className="h-4 w-4" />}

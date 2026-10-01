@@ -58,6 +58,7 @@ export function FirstMessageCard({ card, onDecide, onOpenLead, hotkeysEnabled }:
 
   useHotkeys(
     {
+      enter: send,
       arrowright: send,
       arrowleft: skip,
       e: () => focusAtEnd(editorRef.current),
@@ -80,7 +81,7 @@ export function FirstMessageCard({ card, onDecide, onOpenLead, hotkeysEnabled }:
           <Button
             variant="primary"
             size="xl"
-            shortcut="→"
+            shortcut="↵"
             onClick={send}
             disabled={!text.trim()}
             icon={<Send className="h-4 w-4" />}
