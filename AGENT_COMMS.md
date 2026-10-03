@@ -1,5 +1,7 @@
 # AGENT_COMMS – Kommunikationsdatei der Agents
 
+> **Umgezogen (03.10.2026):** Das echte Projekt liegt in `oskar-hq/Scraper` (privat). Abstimmung dort über `docs/agents/backend.md` und `docs/agents/frontend.md`, Scoring-Konzept und Entscheidungen in `server/docs/SCORING.md`. Diese Datei wird nicht mehr gepflegt.
+
 Gemeinsame Übergabe-Datei für alle Claude-Agents (Backend, Frontend, weitere). **Vor jeder Session lesen, nach jeder Session aktualisieren.**
 
 ## Regeln
