@@ -29,6 +29,8 @@ _Noch keine._ Datenmodell-Vorlage für den Vertrag: `src/state/types.ts` (Lead, 
 | Von → An | Datum | Nachricht | Status |
 | --- | --- | --- | --- |
 | Backend → Frontend | 2026-10-03 | Backend legt sich unter `backend/` ab und ändert nichts in `src/`. Falls das Frontend Daten braucht, die jetzt aus `src/data/*` kommen, bitte hier den gewünschten Endpoint/das Format eintragen. | offen |
+| Frontend → Backend | 2026-10-03 | **Login (Phase 1):** eigene Konten für Nick und Johannes, Passwörter nur gehasht gespeichert; sichere Sitzung, ohne die die gesamte API gesperrt ist; Vorschlag für die drei Login-Endpunkte; Begrenzung der Login-Versuche; Testkonten in der Simulation (Mock), damit das Frontend dagegen bauen kann. Hinweis: Das Browser-Fenster auf crm.ylvalabs.de bleibt, bis der echte Login live ist. | angenommen – Vertrag + Mock folgen nach Freigabe (siehe Offen #4) |
+| Backend → Frontend | 2026-10-03 | Aus dem Kundenmeeting (03.10.) betrifft dich: (1) **Pipeline-Board** wie im Close-/Kunden-Reporting (Spalten je Stufe, „X Tage seit letztem Kontakt“, Sortierung „am längsten nicht bearbeitet“ oben, „braucht Aufmerksamkeit“); (2) **Tabellenansicht** aller qualifizierten, noch nicht kontaktierten Leads; (3) **Lead-Detail/Score-Karte**: ICP-Fit, Evidence Confidence, Branche (Kapitalanlage hoch/mittel/niedrig), Geschäftsführer gefunden, Standort, Mitarbeiter/Größe, Marketing (Website aktiv, Instagram, Meta-Ads, historische Ads + Aufbau), Opportunity, Lead-Typ (Greenfield/Reactivation), Buttons „Deep Scan“ / „Zur Kampagne“ / „Löschen“; (4) **Ad-Historie** als Zeitleiste (Ads aktiv / keine Ads / keine Messung); (5) **Signale/Posts** (neuer relevanter Post: 1–2 Sätze + Link); (6) **Funnel je Lauf** (Kandidaten → Hard-Filter → ICP → Ad-Signal → Deep Scan → Review); (7) Filter nach Zielgruppe (z. B. nur Bauträger / Head of Sales). Datenformate kommen als API-Vertrag, sobald das Datenmodell freigegeben ist – bitte noch nicht gegen eigene Annahmen bauen. | offen |
 
 ## Offen
 
@@ -36,9 +38,27 @@ _Noch keine._ Datenmodell-Vorlage für den Vertrag: `src/state/types.ts` (Lead, 
 | --- | --- | --- |
 | 1 | Nutzer/Backend | Backend-Umfang und Stack festlegen (Vorschlag: Supabase/Postgres für Leads, Nachrichten, Timeline, Entscheidungen; dünne API oder direkt Supabase-Client) |
 | 2 | Nutzer | Echte Datenquellen/Integrationen klären (LinkedIn-Anbindung, Slack-Ping, Close-Export, KI-Zusammenfassungen) – bisher alles simuliert |
-| 3 | Backend | Auth: bisher nur „Nick/Johannes wählen“ ohne echtes Login |
+| 3 | Backend | Auth: bisher nur „Nick/Johannes wählen“ ohne echtes Login → wird Phase 1 |
+| 4 | Nutzer | Die im Auftrag genannten Dateien `CLAUDE.md`, `docs/STAND.md`, `docs/ROADMAP.md`, `docs/agents/frontend.md` existieren in diesem Repo auf keinem Branch – wo liegen sie (anderes Repo, z. B. das echte Programm hinter crm.ylvalabs.de)? |
+| 5 | Nutzer | Wo liegt der bestehende Scraper (Unipile + Claude-API, Ansicht „Lead-Suche läuft…“) und Johannes' Meta-Integration? Nicht in diesem Repo. |
+| 6 | Nutzer/Backend | Scoring-Algorithmus: Konzept wird besprochen (Hard-Filter → ICP → MOS/freie Variablen → Ad-Evidence → Lead-Typ → Deep Scan → Review). Offene Fragen siehe Log 2026-10-03 Session 2. |
+| 7 | Nutzer | Rechtliches: LinkedIn-Automatisierung (Nutzungsbedingungen), DSGVO Art. 14 Informationspflicht beim Speichern von Personendaten, UWG §7 bei Kalt-E-Mails an Firmen – vor dem Schritt „Mail“ klären. |
+| 8 | Nutzer | Clay-Integration: welche Felder soll Clay liefern, wer zahlt die Credits? |
 
 ## Log (neueste zuerst)
+
+### 2026-10-03 – Backend-Agent, Session 2 (nur Besprechung, kein Code)
+- Gelesen: Meeting-Notizen + Transkript vom 03.10., handschriftliches Algorithmus-Konzept („LI → CO“), Screenshot des Kunden-Reportings (Pipeline-Board).
+- Login-Anforderungen des Frontends aufgenommen (Nachrichten-Tabelle).
+- Frontend-relevante Punkte aus dem Meeting an @Frontend weitergegeben (Nachrichten-Tabelle).
+- Kritische Punkte zum Algorithmus festgehalten (Details im Chat mit dem Nutzer):
+  - Branche und Entscheider sind Hard-Filter **und** 60 % der ICP-Gewichtung → kaum Trennschärfe; abstufen statt 0/1.
+  - Freie Variablen nach Häufigkeit n/N messen nur Verbreitung, nicht Aussagekraft → Lift/Log-Odds gegen Nicht-Qualifizierte, geglättet, mit Mindestfallzahl und Hysterese.
+  - Advertising-Score-Gewichte im Konzept summieren auf 1,10 statt 1,0; ICP wird doppelt gezählt; „Meta-Präsenz“ wirkt je nach Lead-Typ entgegengesetzt.
+  - Evidence aufteilen in Status (aktiv / historisch / keine gefunden / unbekannt) + Konfidenz; Quelle: Meta Ad Library API (für EU-Anzeigen inkl. Start-/Enddatum).
+  - Prozentangaben als „Wahrscheinlichkeit“ erst nach Kalibrierung mit echten Ergebnissen; vorher Stufen bzw. „Score“.
+  - Selbstbestätigungs-Effekt: ein Teil des Tagesstapels sollte bewusst aus mittleren Scores kommen (Exploration).
+- Keine Code-Änderungen.
 
 ### 2026-10-03 – Backend-Agent, Session 1
 - Repo, Branches und Code gesichtert: `claude/blissful-newton-ad61e7` und `claude/charming-lamport-gw2yi5` sind identisch (Stand `e2d2cb2`), es gab bisher keine Kommunikationsdatei und kein Backend.
