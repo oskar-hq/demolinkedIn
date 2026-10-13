@@ -33,7 +33,8 @@ test('Lead-Suche: Lauf, Trichter, Ergebnis und Übergabe in den Tagesstapel', as
   await openLeadSearch(page);
   // Kein Modus-Schild mehr – die Software läuft immer echt.
   await expect(page.getByTestId('mode-hint')).toHaveCount(0);
-  await expect(page.getByText(/Simulation|Beispieldaten/)).toHaveCount(0);
+  // Demo: Der Hinweis „Demo mit Beispieldaten“ steht nur unten links, nicht in der Lead-Suche selbst.
+  await expect(page.locator('main').getByText(/Simulation|Beispieldaten/)).toHaveCount(0);
 
   // Eine Zeile fasst Region, Anzahl und Kontaktgrad zusammen – „Anpassen“ klappt die Felder auf.
   await expect(page.getByTestId('search-summary')).toContainText('Deutschland · 400 Treffer · 15 Profile · 2./3. Grad');

@@ -77,11 +77,11 @@ test('Startseite zeigt nur die Aufgaben des Tages und einen Start-Button', async
   await expect(page.getByTestId('open-count')).toHaveText('14');
   await expect(page.getByText('Aufgaben für heute', { exact: true })).toBeVisible();
   await expect(page.getByTestId('start-focus')).toContainText('Starten');
-  // Echte Software: kein Demo-Hinweis, kein Modus-Schild, kein „Demo zurücksetzen“ – und kein Hinweis auf „nur eintragen“.
-  await expect(page.getByTestId('demo-badge')).toHaveCount(0);
+  // Demo: genau ein Hinweis unten links (mit „Zurücksetzen“), sonst sieht alles aus wie die echte Software.
+  await expect(page.getByTestId('demo-badge')).toContainText('Demo mit Beispieldaten');
+  await expect(page.getByTestId('demo-reset')).toBeVisible();
   await expect(page.getByTestId('mode-hint')).toHaveCount(0);
   await expect(page.getByTestId('reset-button')).toHaveCount(0);
-  await expect(page.getByText(/Simulation|Beispieldaten|Demo/)).toHaveCount(0);
   await expect(page.getByTestId('protocol-hint')).toHaveCount(0);
   // Im Fokus-Modus gibt es keine Hauptnavigation mehr – nur eine Aufgabe pro Bildschirm.
   await page.keyboard.press('Enter');
@@ -318,7 +318,6 @@ test('Live mit LinkedIn-Aktionen aus: Das Cockpit trägt nur ein und sagt das au
   // Zeigt das eingestellte Anfragen-Limit (Sperre, LINKEDIN_INVITES_PER_DAY – in den E2E-Tests 10000) – je Account,
   // mit Account-Wechsel (12.10., Standard an) zusammen für beide Accounts.
   await expect(page.getByTestId('invites-today')).toHaveText(/^Heute \d+ \/ 20000 Anfragen eingetragen$/);
-  await expect(page.getByTestId('demo-badge')).toHaveCount(0);
   await expect(page.getByTestId('reset-button')).toHaveCount(0);
   await page.getByTestId('start-lead').click();
   await expect(currentCard(page).getByRole('button', { name: /Anfrage eintragen/ })).toBeVisible();
