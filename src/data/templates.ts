@@ -1,5 +1,6 @@
 /**
- * Alle Nachrichtentexte an einer Stelle – hier einfach austauschen.
+ * Alte Demo-Texte (A/B/C) für den Verlauf der Demo-Leads. Die echten Vorlagen kommen aus `GET /api/templates`
+ * (Standardtexte: `server/src/messages/defaults.ts`, bearbeitbar unter Einstellungen → Vorlagen).
  *
  * Platzhalter:
  *   {{vorname}}     Vorname des Leads
@@ -7,6 +8,9 @@
  *   {{stelle}}      ausgeschriebene Stelle (nur Recruiting-Signal)
  *   {{thema}}       Kurzbeschreibung des Angebots passend zum Signal
  *   {{grussformel}} Grußformel des eingeloggten Gründers
+ *
+ * Nur noch Quelle des Demo-Seeds im Backend (`server/scripts/buildDemoSeed.ts` → `server/src/leads/demoSeed.ts`).
+ * Die App selbst liest sie nicht – sie arbeitet mit `/api/*`. Nach einer Änderung den Seed neu erzeugen.
  */
 
 import type { TemplateId } from '../state/types';
@@ -65,6 +69,7 @@ Darf ich dir kurz zeigen, wie das bei ähnlichen Unternehmen funktioniert hat?
 export const TOPIC_BY_SIGNAL = {
   meta_ads: 'planbare Käuferanfragen über Meta',
   hiring: 'neue Vertriebler über Paid Social',
+  search: 'planbare Käuferanfragen über Paid Social',
 } as const;
 
 export type FollowUpTemplateVariant = 'A' | 'B' | 'C';

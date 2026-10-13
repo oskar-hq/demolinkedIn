@@ -1,6 +1,9 @@
 /**
  * Erzeugt aus den Lead-Stammdaten den bisherigen Verlauf (Nachrichten + Timeline)
  * mit Zeitstempeln relativ zum Demo-Start – so wirkt die Demo an jedem Tag „frisch“.
+ *
+ * Nur noch Quelle des Demo-Seeds im Backend (`server/scripts/buildDemoSeed.ts` → `server/src/leads/demoSeed.ts`).
+ * Die App selbst liest sie nicht – sie arbeitet mit `/api/*`. Nach einer Änderung den Seed neu erzeugen.
  */
 
 import { FOUNDERS } from './founders';
@@ -149,4 +152,29 @@ export function buildHistory(lead: Lead, now: number): LeadHistory {
 
   events.sort((a, b) => a.at - b.at);
   return { messages, events, acceptedAt, lastOwnMessageAt };
+}
+
+/** Verlauf eines Leads, der gerade über die Lead-Suche in den Stapel kam – alles „in dieser Sitzung“. */
+export function buildSearchHistory(lead: Lead, now: number): LeadHistory {
+  const source = lead.source;
+  const confidence = source ? ` · ${Math.round(source.confidence * 100)} %` : '';
+  const events: TimelineEvent[] = [
+    {
+      id: `${lead.id}-e-scraped`,
+      kind: 'scraped',
+      at: now - 2 * MINUTE,
+      title: source?.mode === 'live' ? 'Über die Lead-Suche gefunden (LinkedIn)' : 'Über die Lead-Suche gefunden',
+      detail: source?.headline ? `${signalLabel(lead.signal)} – ${source.headline}` : signalLabel(lead.signal),
+      live: true,
+    },
+    {
+      id: `${lead.id}-e-assessed`,
+      kind: 'assessed',
+      at: now - MINUTE,
+      title: `KI-Einschätzung: ${FIT_INFO[lead.fit].label}${confidence}`,
+      detail: lead.fitReason,
+      live: true,
+    },
+  ];
+  return { messages: [], events };
 }

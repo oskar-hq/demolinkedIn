@@ -1,70 +1,113 @@
 import { AnimatePresence, motion, useIsPresent } from 'motion/react';
 import { ChevronDown, Send } from 'lucide-react';
-import { useMemo, useRef, useState } from 'react';
-import { FOLLOW_UP_TEMPLATES, MAX_FOLLOW_UPS } from '../../data/templates';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import { cn } from '../../lib/cn';
-import { fillTemplate, variablesForLead } from '../../lib/template';
-import { daysBetween } from '../../lib/time';
+import { formatRelative } from '../../lib/time';
+import { fillTemplate, variablesForCockpitLead } from '../../lib/template';
 import { useHotkeys } from '../../lib/useHotkeys';
-import { useLeadHistory } from '../../state/demo';
-import type { FollowUpVariant } from '../../state/types';
+import { MESSAGE_TEXT_LIMIT } from '../../state/cockpit';
+import { shortTemplateName, useTemplates } from '../../state/templates';
+import { templateLetter } from '../../../shared/messages';
+import { MoreTemplates, TABBED_TEMPLATES } from './MoreTemplates';
 import { Button } from '../ui/Button';
-import { Kbd } from '../ui/Kbd';
 import { Segmented } from '../ui/Segmented';
+import { ACTION_TEXTS, SKIP_TOAST, useActionMode } from './actionMode';
 import { ChatThread } from './ChatThread';
-import { AiSummary, Eyebrow, FocusPage, PersonHeader } from './FocusParts';
+import { blockReason, selectFirstPlaceholder, TemplatesUnavailable } from './FirstMessageCard';
+import { AccountHint, DetailError, FocusPage, PersonHeader, Placeholder, StatusSentence, StepRail, WriteLabel } from './FocusParts';
 import { MessageEditor, focusAtEnd } from './MessageEditor';
+import { MessageSkeleton } from './FirstMessageCard';
 import type { CardProps } from './cardTypes';
+import { SuggestButton, SuggestionNote, useSuggestion } from './Suggestion';
 import { useSwipeActions } from './swipe';
+import { useTaskCard } from './useTaskCard';
+import { LogReply } from './LogReply';
 
-export function FollowUpCard({ card, onDecide, onOpenLead, hotkeysEnabled }: CardProps) {
-  const { lead, messages, lastOwnMessageAt } = useLeadHistory(card.leadId);
+/** Standard von `MAX_FOLLOW_UPS` im Backend – solange `rules` noch nicht geladen sind. */
+const MAX_FOLLOW_UPS_DEFAULT = 3;
+
+/** Eigene Nachricht statt Vorlage. */
+const CUSTOM = 'custom';
+
+export function FollowUpCard(props: CardProps) {
+  const { signalReady } = useTaskCard(props.card);
+  const templates = useTemplates();
+  // Erst zeigen, wenn Signal und Vorlagen da sind – die Auswahl wird nur einmal angelegt.
+  if (!signalReady || templates.state.status === 'loading') return <MessageSkeleton {...props} eyebrow="Follow-up" />;
+  return <FollowUpReady {...props} />;
+}
+
+function FollowUpReady({ card, onDecide, onOpenLead, hotkeysEnabled }: CardProps) {
+  const { lead, task, detail, rules, draft } = useTaskCard(card);
   const present = useIsPresent();
-  const variables = useMemo(() => variablesForLead(lead), [lead]);
-  const stage = Math.min(MAX_FOLLOW_UPS, (lead.followUps?.length ?? 0) + 1) as 1 | 2 | 3;
-  const silentDays = lead.daysSilent ?? daysBetween(lastOwnMessageAt ?? Date.now());
-  const templates = FOLLOW_UP_TEMPLATES[stage];
+  const mode = useActionMode();
+  const texts = ACTION_TEXTS.send[mode];
+  const variables = useMemo(() => variablesForCockpitLead(lead), [lead]);
+  const stage = task.followUpNumber ?? lead.followUpsSent + 1;
+  const maxStage = rules?.maxFollowUps ?? MAX_FOLLOW_UPS_DEFAULT;
+  // Vorlagen gibt es für die Stufen 1–3 (`GET /api/templates`, F1A … F3B); ab Stufe 4 die von Stufe 3 (zum Anpassen).
+  const templates = useTemplates().followupsFor(stage);
+  const messages = detail.messages;
+  const historyReady = detail.status !== 'loading';
 
-  const [variant, setVariant] = useState<FollowUpVariant>('A');
-  const [drafts, setDrafts] = useState<Record<FollowUpVariant, string>>(() => ({
-    A: fillTemplate(templates.A.text, variables),
-    B: fillTemplate(templates.B.text, variables),
-    C: fillTemplate(templates.C.text, variables),
-    custom: '',
-  }));
+  const [variant, setVariant] = useState<string>(() => {
+    if (draft) return draft.label && templates.some((template) => template.id === draft.label) ? draft.label : CUSTOM;
+    return templates[0]?.id ?? CUSTOM;
+  });
+  // Nur bearbeitete Texte je Variante – unbearbeitete folgen dem aktuellen Vorlagentext.
+  const [drafts, setDrafts] = useState<Record<string, string>>(() => (draft?.text ? { [variant]: draft.text } : {}));
+  // Vorlage, auf der ein Vorschlag beruht – für das Label, solange die eigene Nachricht daraus stammt.
+  const [suggestedFrom, setSuggestedFrom] = useState<string | null>(null);
   const [historyOpen, setHistoryOpen] = useState(false);
   const editorRef = useRef<HTMLTextAreaElement>(null);
-  const text = drafts[variant];
-  const variantName = variant === 'custom' ? 'Eigene Nachricht' : `Variante ${variant}`;
-  const edited = variant !== 'custom' && text !== fillTemplate(templates[variant].text, variables);
+  const template = templates.find((entry) => entry.id === variant) ?? null;
+  const key = template ? template.id : CUSTOM;
+  const original = useMemo(() => (template ? fillTemplate(template.text, variables) : ''), [template, variables]);
+  const text = drafts[key] ?? original;
+  const blocked = blockReason(text);
+  const hintId = `${card.id}-send-hint`;
 
-  const choose = (next: FollowUpVariant) => {
+  // Vorschlag landet als „Eigene Nachricht“ – die Varianten bleiben unverändert wählbar.
+  const applySuggestion = useCallback((next: string, templateId: string | null) => {
+    setDrafts((current) => ({ ...current, [CUSTOM]: next }));
+    setSuggestedFrom(templateId);
+    setVariant(CUSTOM);
+  }, []);
+  const suggestion = useSuggestion(lead.id, 'followup', applySuggestion);
+
+  // Selbst schreiben: leeres Feld als „Eigene Nachricht“, Cursor hinein.
+  const writeOwn = () => {
+    setDrafts((current) => ({ ...current, [CUSTOM]: '' }));
+    setSuggestedFrom(null);
+    setVariant(CUSTOM);
+    requestAnimationFrame(() => focusAtEnd(editorRef.current));
+  };
+  const lastOwn = [...messages].reverse().find((message) => message.from === 'founder') ?? null;
+
+  const choose = (next: string) => {
     setVariant(next);
-    if (next === 'custom') requestAnimationFrame(() => focusAtEnd(editorRef.current));
+    if (next === CUSTOM) requestAnimationFrame(() => focusAtEnd(editorRef.current));
   };
 
   const send = () => {
-    if (!text.trim()) return;
+    if (blocked) {
+      if (text.trim()) selectFirstPlaceholder(editorRef.current);
+      else focusAtEnd(editorRef.current);
+      return;
+    }
     onDecide({
       decision: 'send',
       positive: true,
-      event: {
-        kind: 'message_sent',
-        title: `Follow-up ${stage} gesendet · ${variantName}${edited ? ' (bearbeitet)' : ''}`,
-        detail: text,
+      action: { action: 'message_sent', text, ...(template ? { label: template.id } : suggestedFrom ? { label: suggestedFrom } : {}) },
+      toast: {
+        pending: `Follow-up ${stage} ${texts.pending}`,
+        done: texts.done,
+        short: texts.toastShort,
       },
-      message: { text, label: `Follow-up ${stage} · ${variantName}` },
-      toast: { pending: `Follow-up ${stage} wird gesendet…`, done: 'Gesendet' },
     });
   };
 
-  const skip = () =>
-    onDecide({
-      decision: 'skip',
-      positive: false,
-      event: { kind: 'skipped', title: `Follow-up ${stage} nicht gesendet` },
-      toast: { pending: 'Wird übersprungen…', done: 'Nicht gesendet' },
-    });
+  const skip = () => onDecide({ decision: 'skip', positive: false, action: null, toast: SKIP_TOAST });
 
   useHotkeys(
     {
@@ -72,16 +115,15 @@ export function FollowUpCard({ card, onDecide, onOpenLead, hotkeysEnabled }: Car
       arrowright: send,
       arrowleft: skip,
       e: () => focusAtEnd(editorRef.current),
-      '1': () => choose('A'),
-      '2': () => choose('B'),
-      '3': () => choose('C'),
-      '4': () => choose('custom'),
+      ...Object.fromEntries(templates.slice(0, TABBED_TEMPLATES).map((entry, index) => [String(index + 1), () => choose(entry.id)])),
+      [String(Math.min(templates.length, TABBED_TEMPLATES) + 1)]: () => choose(CUSTOM),
+      k: () => void suggestion.run(),
       v: () => setHistoryOpen((open) => !open),
     },
     hotkeysEnabled && present,
   );
   useSwipeActions({
-    right: { label: `Follow-up ${stage} senden`, run: send, enabled: Boolean(text.trim()) },
+    right: { label: `Follow-up ${stage} ${mode === 'send' ? 'senden' : 'eintragen'}`, run: send, enabled: !blocked },
     left: { label: 'Nicht senden', run: skip },
   });
 
@@ -97,40 +139,40 @@ export function FollowUpCard({ card, onDecide, onOpenLead, hotkeysEnabled }: Car
             size="xl"
             shortcut="↵"
             onClick={send}
-            disabled={!text.trim()}
+            disabled={!!blocked}
+            aria-describedby={blocked ? hintId : undefined}
             icon={<Send className="h-4 w-4" />}
             className="w-full"
           >
-            Senden
+            <span className="sm:hidden">{texts.short}</span>
+            <span className="hidden sm:inline">{texts.button}</span>
           </Button>
         </>
       }
     >
-      <Eyebrow>
-        Follow-up {stage} von {MAX_FOLLOW_UPS}
-      </Eyebrow>
-      <PersonHeader
-        lead={lead}
-        compact
-        onOpen={() => onOpenLead(lead.id)}
-        subtitle={`Keine Antwort seit ${silentDays} ${silentDays === 1 ? 'Tag' : 'Tagen'} – Follow-up ${stage} von ${MAX_FOLLOW_UPS}`}
-      />
-      <AiSummary text={lead.summary} />
+      <StepRail step="followup" extra={`Follow-up ${stage} von ${Math.max(maxStage, stage)}`} />
+      <div className="mt-6">
+        <PersonHeader lead={lead} compact profileLink={mode === 'protocol'} onOpen={() => onOpenLead(lead.id)} />
+        <AccountHint kind="message" account={lead.linkedin?.sentBy} owner={lead.owner} />
+      </div>
+      <StatusSentence tone="warn" testId="task-sentence">
+        Noch keine Antwort{lastOwn ? ` – deine letzte Nachricht ${formatRelative(lastOwn.at)}` : ''}
+      </StatusSentence>
 
-      <div className="mt-4 flex flex-col items-center">
-        <button
-          type="button"
-          onClick={() => setHistoryOpen((open) => !open)}
-          aria-expanded={historyOpen}
-          className="inline-flex h-8 items-center gap-1.5 rounded-full px-3 text-[13px] text-ink-2 transition-colors hover:bg-white/[0.06] hover:text-ink"
-        >
-          {historyOpen ? 'Verlauf ausblenden' : `Bisherigen Verlauf anzeigen · ${messages.length} ${messages.length === 1 ? 'Nachricht' : 'Nachrichten'}`}
-          <ChevronDown className={cn('h-4 w-4 transition-transform duration-300', historyOpen && 'rotate-180')} />
-          <Kbd>V</Kbd>
-        </button>
+      <div className="mt-6 flex flex-col items-center">
+        {detail.status === 'error' ? (
+          <DetailError leadId={lead.id} />
+        ) : historyReady ? (
+          <Button variant="ghost" size="sm" shortcut="V" aria-expanded={historyOpen} onClick={() => setHistoryOpen((open) => !open)}>
+            Verlauf ({messages.length})
+            <ChevronDown className={cn('h-4 w-4 transition-transform duration-300', historyOpen && 'rotate-180')} />
+          </Button>
+        ) : (
+          <Placeholder className="h-8 w-48" />
+        )}
       </div>
       <AnimatePresence initial={false}>
-        {historyOpen && (
+        {historyOpen && historyReady && (
           <motion.div
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: 'auto', opacity: 1 }}
@@ -138,41 +180,74 @@ export function FollowUpCard({ card, onDecide, onOpenLead, hotkeysEnabled }: Car
             transition={{ type: 'spring', bounce: 0, duration: 0.4 }}
             className="overflow-hidden"
           >
-            <div className="scroll-thin mt-4 max-h-[320px] overflow-y-auto">
+            <div className="scroll-thin mt-4 max-h-[320px] touch-pan-y overflow-y-auto">
               <ChatThread lead={lead} messages={messages} compact />
             </div>
           </motion.div>
         )}
       </AnimatePresence>
 
-      <div className="mt-6 flex flex-col items-center">
+      <div className="mt-4 flex flex-col items-center">
+        {templates.length === 0 && (
+          <div className="mb-3">
+            <TemplatesUnavailable />
+          </div>
+        )}
         <Segmented
           ariaLabel="Follow-up-Variante"
-          value={variant}
+          value={template ? template.id : CUSTOM}
           onChange={choose}
           options={[
-            { value: 'A', label: 'Variante A', shortcut: '1' },
-            { value: 'B', label: 'Variante B', shortcut: '2' },
-            { value: 'C', label: 'Variante C', shortcut: '3' },
-            { value: 'custom', label: 'Eigene Nachricht', shortcut: '4' },
+            ...templates.slice(0, TABBED_TEMPLATES).map((entry, index) => ({
+              value: entry.id,
+              label: (
+                <>
+                  <span className="sm:hidden">Variante {templateLetter(index)}</span>
+                  <span className="hidden max-w-[170px] truncate align-bottom sm:inline-block">
+                    {templateLetter(index)} · {shortTemplateName(entry)}
+                  </span>
+                </>
+              ),
+              shortcut: String(index + 1),
+            })),
+            { value: CUSTOM, label: 'Eigene Nachricht', shortcut: String(Math.min(templates.length, TABBED_TEMPLATES) + 1) },
           ]}
         />
-        <p className="mt-2.5 text-[12.5px] text-ink-3">
-          {variant === 'custom' ? 'Freitext – Variablen werden trotzdem erkannt' : `„${templates[variant].name}“`}
-          {edited && ' · bearbeitet'}
-        </p>
+        <MoreTemplates templates={templates} value={template ? template.id : CUSTOM} onChange={choose} className="mt-2" />
+        {stage > 3 && template && (
+          <p className="mt-2.5 text-[12.5px] text-ink-3" data-testid="template-description">
+            Vorlage von Follow-up 3 – bitte anpassen
+          </p>
+        )}
       </div>
 
-      <div className="mt-4">
+      <div className="mt-6">
+        <WriteLabel onClear={text ? writeOwn : undefined} hint={template ? 'Vorschlag – einfach überschreiben' : null}>
+          Dein Follow-up an {lead.person.firstName}
+        </WriteLabel>
         <MessageEditor
           ref={editorRef}
           value={text}
-          onChange={(value) => setDrafts((current) => ({ ...current, [variant]: value }))}
+          onChange={(value) => setDrafts((current) => ({ ...current, [key]: value }))}
           variables={variables}
           onSubmit={send}
-          placeholder={`Eigene Nachricht an ${lead.firstName} schreiben …`}
+          placeholder={`Schreib ${lead.person.firstName} selbst – oder hol dir einen Vorschlag …`}
+          limit={MESSAGE_TEXT_LIMIT}
+          actions={<SuggestButton state={suggestion.state} onClick={() => void suggestion.run()} />}
+          submitVerb={mode === 'send' ? 'senden' : 'eintragen'}
+          copyable={mode === 'protocol'}
+          copyDisabled={!!blocked}
+          describedBy={blocked ? hintId : undefined}
         />
+        <SuggestionNote state={suggestion.state} />
+        {blocked && text.trim() && (
+          <p id={hintId} className="mt-1 flex items-baseline gap-2 px-1 text-[12.5px] text-ink" data-testid="send-blocked">
+            <span className="h-1.5 w-1.5 shrink-0 -translate-y-px rounded-full bg-warn" aria-hidden />
+            {blocked}
+          </p>
+        )}
       </div>
+      <LogReply lead={lead} onDecide={onDecide} hotkeysEnabled={hotkeysEnabled && present} />
     </FocusPage>
   );
 }

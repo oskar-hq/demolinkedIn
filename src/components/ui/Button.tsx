@@ -16,16 +16,16 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 
 const VARIANTS: Record<Variant, string> = {
   primary: 'bg-ink text-black hover:bg-white shadow-[0_1px_0_rgb(255_255_255/0.4)_inset]',
-  secondary: 'bg-white/[0.08] text-ink hover:bg-white/[0.12]',
-  ghost: 'text-ink-2 hover:text-ink hover:bg-white/[0.06]',
-  outline: 'bg-canvas text-ink border border-line-strong hover:bg-surface-2 hover:border-white/25',
+  secondary: 'bg-surface-3 text-ink hover:bg-surface-4',
+  ghost: 'text-ink-2 hover:text-ink hover:bg-surface-3',
+  outline: 'bg-surface-3 text-ink hover:bg-surface-4',
 };
 
 const SIZES: Record<Size, string> = {
-  sm: 'h-8 px-3 text-[13px] gap-1.5 rounded-full',
-  md: 'h-10 px-4 text-[14px] gap-2 rounded-full',
-  lg: 'h-12 px-5 text-[15px] gap-2.5 rounded-full',
-  xl: 'h-14 px-6 text-[16px] gap-2.5 rounded-full',
+  sm: 'h-8 px-3 text-[13px] gap-1.5 rounded-[8px]',
+  md: 'h-10 px-4 text-[14px] gap-2 rounded-[10px]',
+  lg: 'h-12 px-5 text-[15px] gap-2.5 rounded-[12px]',
+  xl: 'h-14 px-6 text-[16px] gap-2.5 rounded-[14px]',
 };
 
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button(
@@ -38,7 +38,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
       ref={ref}
       type="button"
       className={cn(
-        'inline-flex select-none items-center justify-center whitespace-nowrap font-medium tracking-[-0.01em]',
+        'inline-flex select-none items-center justify-center whitespace-nowrap font-semibold tracking-[-0.01em]',
         'transition-[background-color,color,transform,border-color,opacity] duration-100 ease-out',
         'active:scale-[0.97] disabled:pointer-events-none disabled:opacity-40',
         VARIANTS[variant],

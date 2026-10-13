@@ -1,8 +1,10 @@
 import { FOUNDERS } from '../data/founders';
 import { TOPIC_BY_SIGNAL } from '../data/templates';
 import type { Lead } from '../state/types';
+import type { CockpitLead } from '../../shared/leads';
+import { DEFAULT_TOPIC, metaPauseText, metaStopText, type TemplateAudience } from '../../shared/messages';
 
-export type VariableKey = 'vorname' | 'firma' | 'stelle' | 'thema' | 'grussformel';
+export type VariableKey = 'vorname' | 'firma' | 'stelle' | 'thema' | 'grussformel' | 'metapause' | 'metastopp';
 
 export interface TemplateVariable {
   key: VariableKey;
@@ -16,10 +18,12 @@ const LABELS: Record<VariableKey, string> = {
   stelle: 'Stelle',
   thema: 'Thema',
   grussformel: 'Grußformel',
+  metapause: 'Meta-Ads aus seit',
+  metastopp: 'Meta-Ads aufgehört',
 };
 
 export function variablesForLead(lead: Lead): TemplateVariable[] {
-  const values: Record<VariableKey, string> = {
+  const values: Partial<Record<VariableKey, string>> = {
     vorname: lead.firstName,
     firma: lead.company,
     stelle: lead.signal.type === 'hiring' ? lead.signal.role : '',
@@ -28,11 +32,45 @@ export function variablesForLead(lead: Lead): TemplateVariable[] {
   };
   return (Object.keys(values) as VariableKey[])
     .filter((key) => values[key])
-    .map((key) => ({ key, label: LABELS[key], value: values[key] }));
+    .map((key) => ({ key, label: LABELS[key], value: values[key]! }));
+}
+
+/** Variablen für einen Lead aus der Datenbank – dieselben Werte wie beim Vorschlag im Backend (`shared/messages.ts`). */
+export function variablesForCockpitLead(lead: CockpitLead): TemplateVariable[] {
+  const values: Partial<Record<VariableKey, string>> = {
+    vorname: lead.person.firstName,
+    firma: lead.company.name,
+    thema: DEFAULT_TOPIC,
+    grussformel: FOUNDERS[lead.owner].greeting,
+    // Wie im Backend (`metaPauseText`) – auch ohne Datum („seit einiger Zeit“), damit Vorlagen nie offen bleiben.
+    metapause: metaPauseText(lead.metaAds?.lastStop),
+    metastopp: metaStopText(lead.metaAds?.lastStop),
+  };
+  return (Object.keys(values) as VariableKey[])
+    .filter((key) => values[key])
+    .map((key) => ({ key, label: LABELS[key], value: values[key]! }));
+}
+
+/**
+ * Zielgruppe der Erstnachricht – wie das Backend beim Vorschlag (`server/src/messages/suggest.ts`): Reactivation, wenn
+ * die Firma früher Meta-Ads geschaltet hat, „active“, wenn sie gerade schaltet (seit 12.10.), sonst Greenfield (auch bei
+ * „unklar“).
+ */
+export function audienceFor(lead: CockpitLead): Exclude<TemplateAudience, 'any'> {
+  const ads = lead.metaAds?.state;
+  const type = lead.score?.leadType ?? (ads === 'stopped' ? 'reactivation' : ads === 'active' ? 'active' : null);
+  return type === 'reactivation' || type === 'active' ? type : 'greenfield';
+}
+
+const PLACEHOLDER = /\{\{\s*(\w+)\s*\}\}/g;
+
+/** Noch nicht ersetzte Platzhalter, z. B. ["firma"] – so darf die Nachricht nicht hinausgehen. */
+export function unresolvedPlaceholders(text: string): string[] {
+  return [...new Set([...text.matchAll(PLACEHOLDER)].map((match) => match[1]))];
 }
 
 export function fillTemplate(template: string, variables: TemplateVariable[]): string {
-  return template.replace(/\{\{(\w+)\}\}/g, (match, key: string) => {
+  return template.replace(PLACEHOLDER, (match, key: string) => {
     const variable = variables.find((v) => v.key === key);
     return variable ? variable.value : match;
   });

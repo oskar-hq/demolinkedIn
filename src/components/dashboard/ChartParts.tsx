@@ -11,21 +11,17 @@ export const CHART = {
 
 interface ChartCardProps {
   title: string;
-  subtitle?: string;
   legend?: ReactNode;
   children: ReactNode;
   className?: string;
   aside?: ReactNode;
 }
 
-export function ChartCard({ title, subtitle, legend, children, className, aside }: ChartCardProps) {
+export function ChartCard({ title, legend, children, className, aside }: ChartCardProps) {
   return (
-    <section className={cn('flex flex-col rounded-[24px] border border-line bg-surface-1 p-5 sm:p-6', className)}>
-      <div className="mb-5 flex flex-wrap items-start justify-between gap-x-4 gap-y-2">
-        <div>
-          <h2 className="text-[15px] font-semibold tracking-[-0.01em]">{title}</h2>
-          {subtitle && <p className="mt-0.5 text-[12.5px] text-ink-3">{subtitle}</p>}
-        </div>
+    <section className={cn('flex flex-col rounded-[20px] bg-surface-1 p-5 sm:p-6', className)}>
+      <div className="mb-5 flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
+        <h2 className="text-[15px] font-semibold tracking-[-0.01em]">{title}</h2>
         {legend}
         {aside}
       </div>
@@ -60,7 +56,7 @@ interface TooltipRow {
 /** Gemeinsame Tooltip-Optik: Wert zuerst und kräftig, Serienname dahinter. */
 export function TooltipBox({ title, rows, footnote }: { title: string; rows: TooltipRow[]; footnote?: string }) {
   return (
-    <div className="min-w-[160px] rounded-xl border border-line-strong bg-surface-3/95 px-3 py-2.5 shadow-[0_16px_40px_-12px_rgb(0_0_0/0.9)] backdrop-blur-md">
+    <div className="min-w-[160px] rounded-xl border border-line-strong bg-surface-3/95 px-3 py-2.5 shadow-[0_16px_40px_-12px_rgb(0_0_0/0.9)] backdrop-blur-md reduced-transparency:bg-surface-3 reduced-transparency:backdrop-blur-none">
       <p className="mb-1.5 text-[11.5px] text-ink-3">{title}</p>
       <div className="space-y-1">
         {rows.map((row) => (

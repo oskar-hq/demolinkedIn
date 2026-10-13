@@ -11,9 +11,10 @@ import {
   XAxis,
   YAxis,
 } from 'recharts';
-import type { DayStat, RateStat } from '../../data/dashboard';
+import { pct, type DayStat, type RateStat } from './stats';
 import { formatInt, formatPercent, formatShortDate, formatWeekdayDate } from '../../lib/format';
 import { CHART, TooltipBox } from './ChartParts';
+import { FOUNDERS } from '../../data/founders';
 
 const axisProps = {
   stroke: 'transparent',
@@ -85,7 +86,7 @@ export function ActivityChart({ days }: { days: DayStat[] }) {
   );
 }
 
-/* ───────────── Antwortquote je Template / Stufe ───────────── */
+/* ───────────── Antwortquote je Vorlage / Stufe ───────────── */
 
 export function RateBarChart({ data, ariaLabel }: { data: RateStat[]; ariaLabel: string }) {
   const best = Math.max(...data.map((entry) => entry.rate));
@@ -105,7 +106,7 @@ export function RateBarChart({ data, ariaLabel }: { data: RateStat[]; ariaLabel:
               const entry = props.payload[0].payload as (typeof chartData)[number];
               return (
                 <TooltipBox
-                  title={entry.label}
+                  title={entry.title ?? entry.label}
                   rows={[
                     {
                       color: entry.rate === best ? CHART.accent : CHART.primary,
@@ -130,7 +131,7 @@ export function RateBarChart({ data, ariaLabel }: { data: RateStat[]; ariaLabel:
                 if (!box || box.x === undefined || box.y === undefined) return '';
                 return (
                   <text x={box.x + (box.width ?? 0) / 2} y={box.y - 8} textAnchor="middle" fill="#f5f5f7" fontSize={12} fontWeight={600}>
-                    {formatPercent(Number(props.value) / 100)}
+                    {pct(Number(props.value) / 100)}
                   </text>
                 );
               }}
@@ -152,7 +153,7 @@ export interface WeekCompare {
 
 export function WeeklyCompareChart({ data }: { data: WeekCompare[] }) {
   return (
-    <div className="h-[300px]" role="img" aria-label="Säulendiagramm: Termine pro Woche, Nick und Johannes">
+    <div className="h-[300px]" role="img" aria-label={`Säulendiagramm: Termine pro Woche, ${FOUNDERS.nick.name} und ${FOUNDERS.johannes.name}`}>
       <ResponsiveContainer width="100%" height="100%">
         <BarChart data={data} margin={{ top: 8, right: 4, bottom: 0, left: -24 }} barGap={2}>
           <CartesianGrid vertical={false} stroke={CHART.grid} />
@@ -167,8 +168,8 @@ export function WeeklyCompareChart({ data }: { data: WeekCompare[] }) {
                 <TooltipBox
                   title={`Termine ${entry.week}`}
                   rows={[
-                    { color: CHART.primary, label: 'Nick', value: formatInt(entry.Nick), shape: 'square' },
-                    { color: CHART.accent, label: 'Johannes', value: formatInt(entry.Johannes), shape: 'square' },
+                    { color: CHART.primary, label: FOUNDERS.nick.name, value: formatInt(entry.Nick), shape: 'square' },
+                    { color: CHART.accent, label: FOUNDERS.johannes.name, value: formatInt(entry.Johannes), shape: 'square' },
                   ]}
                 />
               );

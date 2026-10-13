@@ -26,7 +26,7 @@ export function Pill({ children, tone = 'neutral', icon, dot = !icon, className,
   return (
     <span
       className={cn(
-        'inline-flex max-w-full items-center gap-1.5 rounded-full border border-line bg-white/[0.04] font-medium text-ink',
+        'inline-flex max-w-full items-center gap-1.5 rounded-full border border-transparent bg-surface-3 font-medium text-ink',
         size === 'md' ? 'min-h-7 px-2.5 text-[13px]' : 'min-h-6 px-2 text-[12px]',
         wrap && 'py-1',
         className,

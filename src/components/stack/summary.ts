@@ -23,13 +23,16 @@ export function daySummary(cards: CardState[]) {
   return {
     done: done.length,
     duration,
+    /** Alle gesendeten Nachrichten: Erstnachrichten, Follow-ups und Antworten. */
+    messages: count('send'),
     stats: [
       { label: 'Vernetzungsanfragen', value: count('connect') },
       { label: 'Erstnachrichten', value: count('send', 'first') },
       { label: 'Follow-ups', value: count('send', 'followup') },
-      { label: 'Exporte nach Close', value: count('export') },
+      { label: 'Übergaben an Close', value: count('export') },
       { label: 'Aussortiert', value: count('reject') },
-      { label: 'Übersprungen', value: count('skip') + count('discard') },
+      { label: 'Kein Interesse', value: count('discard') },
+      { label: 'Übersprungen', value: count('skip') },
     ],
   };
 }

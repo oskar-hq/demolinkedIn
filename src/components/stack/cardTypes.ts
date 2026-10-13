@@ -1,12 +1,18 @@
-import type { CardState, Decision, TimelineKind } from '../../state/types';
+import type { LeadActionRequest } from '../../../shared/leads';
+import type { ToastTexts } from '../../state/demo';
+import type { CardState, Decision } from '../../state/types';
 
 export interface DecideArgs {
   decision: Decision;
   /** Bestimmt die Richtung der Übergangsanimation. */
   positive: boolean;
-  event: { kind: TimelineKind; title: string; detail?: string };
-  message?: { text: string; label: string };
-  toast: { pending: string; done: string };
+  /** Was gespeichert wird – null = für heute überspringen (`POST /api/leads/:id/snooze`). */
+  action: LeadActionRequest | null;
+  toast: ToastTexts;
+  /** Vernetzen/Nachricht wirklich über LinkedIn senden (`/api/leads/:id/linkedin/*`) statt nur eintragen. */
+  viaLinkedIn?: boolean;
+  /** Übergabe wirklich in Close anlegen (`POST /api/leads/:id/handover`) statt nur eintragen. */
+  viaCrm?: boolean;
 }
 
 export interface CardProps {

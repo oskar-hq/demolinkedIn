@@ -1,12 +1,48 @@
+# Demo des Outreach Cockpits: dieselbe Software wie im echten Betrieb, aber fest in der Simulation.
+# Keine Schlüssel, keine .env – es geht nichts an LinkedIn, Anthropic, Meta, Close oder Slack.
+x-logging: &logging
+  driver: json-file
+  options:
+    max-size: 10m
+    max-file: "3"
+
 services:
+  # Frontend: statische Dateien über nginx, leitet /api an das Backend weiter
   outreach-cockpit:
+    logging: *logging
     build:
       context: .
-      # Build nutzt direkt das Netzwerk des Servers – vermeidet DNS-/Netzwerkprobleme
-      # beim Paket-Download, z. B. wenn Docker in einem Proxmox-LXC-Container läuft.
+      # Build nutzt direkt das Netzwerk des Servers – vermeidet DNS-/Netzwerkprobleme beim Paket-Download,
+      # z. B. wenn Docker in einem Proxmox-LXC-Container läuft.
       network: host
     image: outreach-cockpit-demo:latest
     container_name: outreach-cockpit-demo
     ports:
-      - "8080:80"
+      # Anderer Port: z. B. DEMO_PORT=80 docker compose up -d --build
+      - "${DEMO_PORT:-8080}:80"
+    depends_on:
+      - backend
     restart: unless-stopped
+
+  # Backend in der Simulation mit erfundenen Leads und Testkonten (Passwort „demo“).
+  backend:
+    logging: *logging
+    build:
+      context: .
+      dockerfile: server/Dockerfile
+      network: host
+    image: outreach-cockpit-demo-backend:latest
+    container_name: outreach-cockpit-demo-backend
+    environment:
+      LEAD_SEARCH_MODE: mock
+      AUTH_DEMO_ACCOUNTS: "true"
+      # Testkonten gehen nur ohne Secure-Cookie (Vorgabe des Backends); die Demo enthält keine echten Daten.
+      AUTH_COOKIE_SECURE: "false"
+      # Lead-Suche in der Simulation etwas schneller als „echt“ (1 = ca. 15–20 s pro Lauf)
+      MOCK_SPEED: "0.5"
+    volumes:
+      - demo-data:/app/server/data
+    restart: unless-stopped
+
+volumes:
+  demo-data:

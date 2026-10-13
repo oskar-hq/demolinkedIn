@@ -5,15 +5,8 @@ const weekdayDate = new Intl.DateTimeFormat('de-DE', { weekday: 'short', day: 'n
 
 export const formatInt = (value: number) => integer.format(value);
 export const formatPercent = (ratio: number) => `${oneDecimal.format(ratio * 100)} %`;
-export const formatPoints = (delta: number) => `${delta >= 0 ? '+' : '−'}${oneDecimal.format(Math.abs(delta * 100))} Pp.`;
 export const formatShortDate = (ts: number) => shortDate.format(ts);
 export const formatWeekdayDate = (ts: number) => weekdayDate.format(ts);
-
-export function formatDeltaPercent(current: number, previous: number): string {
-  if (!previous) return '–';
-  const delta = (current - previous) / previous;
-  return `${delta >= 0 ? '+' : '−'}${integer.format(Math.round(Math.abs(delta) * 100))} %`;
-}
 
 /** Kalenderwoche nach ISO 8601. */
 export function isoWeek(ts: number): number {

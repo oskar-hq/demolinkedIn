@@ -2,11 +2,14 @@
  * Fake-Daten. Alle Personen und Firmen sind frei erfunden.
  * Jeder Lead gehört genau einem Gründer (dessen LinkedIn-Account ihn angeschrieben hat)
  * und erzeugt genau eine Aufgabe für heute – je nach aktueller Stufe.
+ *
+ * Nur noch Quelle des Demo-Seeds im Backend (`server/scripts/buildDemoSeed.ts` → `server/src/leads/demoSeed.ts`).
+ * Die App selbst liest sie nicht – sie arbeitet mit `/api/*`. Nach einer Änderung den Seed neu erzeugen.
  */
 
 import type { Lead } from '../state/types';
 
-export const LEADS: Lead[] = [
+const DEMO_LEADS: Lead[] = [
   // ───────────────────────────── Nick ─────────────────────────────
   {
     id: 'n01',
@@ -645,5 +648,45 @@ export const LEADS: Lead[] = [
     stage: 'lead',
   },
 ];
+
+/**
+ * Erfundene LinkedIn-/Provider-IDs der Demo-Leads. Die Lead-Suche gleicht Treffer darüber ab –
+ * einige dieser IDs tauchen in der simulierten Suche wieder auf und werden als Dublette erkannt
+ * (siehe server/src/adapters/mock/mockData.ts).
+ */
+const PROVIDER_IDS: Record<string, string> = {
+  n01: 'ACoAAtqQ1U4x8BPqF5j9Uf9CFX8uLTfI6WjuR',
+  n02: 'ACoAAidQBs3H3OQz8AdvGSLrL80RPcWlwpMPI',
+  n03: 'ACoAAu5pnCm6XRXA3rZgGk5XoFTp3eDcwQjEA',
+  n04: 'ACoAAgBD4PzfTJ5dxYPuWSAs7tlgmemJm9Djs',
+  n05: 'ACoAAlHwtBxGXGIgJV1XL2HbFYoxjeedWWcGt',
+  n06: 'ACoAACSm6l0KJQuwYt60GPX81HGuxBmLAPGNG',
+  n07: 'ACoAAE0gCmTlRsIDArHsuB0O7f0y5mJeWGlzy',
+  n08: 'ACoAA1RROp8zutBWyjk8UAPSUxIBlWa99Riwt',
+  n09: 'ACoAAm2HMzEkrcD0cIJS12lSUiZZDrEY8aBiA',
+  n10: 'ACoAA0cJ6AZrNqtiMz5QvwRyuvaPgH79JrjFV',
+  n11: 'ACoAAvBZBPVBvLJd7Bg9bF4c6RAIpE8DHBp8i',
+  n12: 'ACoAAspQMWn708YjmUA4yeOCl05UxWCcPtuXf',
+  n13: 'ACoAAoale4kirfnIcsIg4j3J3fAuP3lHkr6Co',
+  n14: 'ACoAAVsJ2iyuRpGDBozoc7epHjl7RCGcdrPpl',
+  n15: 'ACoAAmw4AhyM4aWTJvZ0tMxzT150S3XtODAnt',
+  j01: 'ACoAAipOmrmtCAbTFPehWZWzynio9jsSD6DWB',
+  j02: 'ACoAAPugDQ7qtLJYy3FVOKU6Rf1FsrsmSv8AE',
+  j03: 'ACoAAAaiRhcuIyhoQro0gcaRcsfGHr6yHRlz5',
+  j04: 'ACoAAz97EcPXEDrwDSL1h5D6h7G4ojOMoevDb',
+  j05: 'ACoAAeezjPPaYPeye0TStY3yPGMWea1dOKJ6T',
+  j06: 'ACoAAVV3QHTaQjdllKaLVmzfGQuBa6wjc4MX2',
+  j07: 'ACoAA0HxHMXoG0bkQ0GogQ2F2lsUyQWCf7cU2',
+  j08: 'ACoAAc8OhFPfnobwgExxvgxda0NR1heoOEqyQ',
+  j09: 'ACoAAKdvwEFPReGBCjqEVSTFC0eoR6Xadfp3t',
+  j10: 'ACoAAUyYsvD0UHyPOo8SOczJTySO7247Rtrvk',
+  j11: 'ACoAAw7FCJwGM5yZBAb6WCTneRX4uDDk63zcF',
+  j12: 'ACoAA66eWvslR1vomfKn7XP06Z0G9khqcxEa2',
+  j13: 'ACoAAyKj7CgE4hawAlRSKwosg34u8qCTVjxAp',
+  j14: 'ACoAAxUhfgJsLF4pCNQfdLEWIPOfxhPyo0jwN',
+  j15: 'ACoAAABrjIvGWGezsCD3LLCCqwFN0Jx7kcmUn',
+};
+
+export const LEADS: Lead[] = DEMO_LEADS.map((lead) => ({ ...lead, providerId: PROVIDER_IDS[lead.id] }));
 
 export const LEADS_BY_ID: Record<string, Lead> = Object.fromEntries(LEADS.map((lead) => [lead.id, lead]));

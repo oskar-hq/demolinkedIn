@@ -14,11 +14,25 @@ export const FIT_INFO: Record<FitCategory, FitInfo> = {
 };
 
 export function signalLabel(signal: Signal): string {
-  return signal.type === 'meta_ads' ? 'Meta Ads aktiv' : `Sucht: ${signal.role}`;
+  switch (signal.type) {
+    case 'meta_ads':
+      return 'Meta Ads aktiv';
+    case 'hiring':
+      return `Sucht: ${signal.role}`;
+    case 'search':
+      return signal.detail;
+  }
 }
 
 export function signalDetail(signal: Signal): string {
-  return signal.type === 'meta_ads' ? signal.detail : 'Offene Stelle auf LinkedIn und Jobportalen';
+  switch (signal.type) {
+    case 'meta_ads':
+      return signal.detail;
+    case 'hiring':
+      return 'Offene Stelle auf LinkedIn und Jobportalen';
+    case 'search':
+      return 'Über die Lead-Suche gefunden und von der KI qualifiziert';
+  }
 }
 
 export function fullName(lead: Lead): string {
@@ -30,6 +44,7 @@ export function initials(lead: Lead): string {
 }
 
 export function linkedinUrl(lead: Lead): string {
+  if (lead.source?.profileUrl) return lead.source.profileUrl.replace(/^https?:\/\/(www\.)?/, '');
   const slug = `${lead.firstName}-${lead.lastName}`
     .toLowerCase()
     .replace(/ä/g, 'ae')

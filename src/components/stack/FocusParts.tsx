@@ -1,22 +1,24 @@
 import { motion, useTransform, type MotionValue } from 'motion/react';
-import { ArrowLeft, ArrowRight, ChevronRight, Sparkles } from 'lucide-react';
+import { ArrowLeft, ArrowRight, ArrowUpRight, Briefcase, Check, ChevronRight, Megaphone, UserSearch } from 'lucide-react';
 import type { ReactNode } from 'react';
+import type { CockpitLead } from '../../../shared/leads';
 import { cn } from '../../lib/cn';
-import { fullName, initials } from '../../lib/leadInfo';
-import type { Lead } from '../../state/types';
-import { Avatar } from '../ui/Avatar';
+import { leadCompany, leadName, leadPosition, linkedinProfileUrl, type LeadSignal } from '../../lib/leadView';
+import { FOUNDERS } from '../../data/founders';
+import { useCockpit } from '../../state/cockpit';
+import type { CardType } from '../../state/types';
 import { useSwipeContext, type SwipeActions } from './swipe';
 
 /** Eine Aufgabe = eine Seite: Inhalt mittig, Entscheidung unten in fester Position. */
 export function FocusPage({ children, actions }: { children: ReactNode; actions: ReactNode }) {
   const swipe = useSwipeContext();
   return (
-    <div className="relative flex min-h-[calc(100dvh-64px)] flex-col">
+    <div className="relative flex min-h-[calc(100dvh-64px-var(--safe-top))] flex-col">
       {swipe?.actionsRef.current && <SwipeHints x={swipe.x} actions={swipe.actionsRef.current} />}
       <div className="flex flex-1 flex-col items-center px-5 pb-10 pt-6 sm:pt-8">
         <div className="w-full max-w-[600px]">{children}</div>
       </div>
-      <div className="sticky bottom-0 z-10 bg-gradient-to-t from-black from-70% to-transparent px-5 pb-5 pt-7">
+      <div className="sticky bottom-0 z-10 bg-gradient-to-t from-canvas from-70% to-transparent px-5 pb-[calc(1.25rem+var(--safe-bottom))] pt-7">
         <div className="mx-auto grid w-full max-w-[600px] grid-cols-2 gap-3">{actions}</div>
       </div>
     </div>
@@ -57,13 +59,13 @@ function SwipeHints({ x, actions }: { x: MotionValue<number>; actions: SwipeActi
 
 export function Eyebrow({ children }: { children: ReactNode }) {
   const swipe = useSwipeContext();
-  const className = 'mb-5 text-center text-[12px] font-medium uppercase tracking-[0.1em] text-ink-3';
+  const className = 'mb-5 text-center text-[12px] font-semibold text-ink-3';
   return swipe ? (
     <SwipeAwareEyebrow x={swipe.x} className={className}>
       {children}
     </SwipeAwareEyebrow>
   ) : (
-    <p className={className}>{children}</p>
+    <div className={className}>{children}</div>
   );
 }
 
@@ -71,57 +73,158 @@ export function Eyebrow({ children }: { children: ReactNode }) {
 function SwipeAwareEyebrow({ x, className, children }: { x: MotionValue<number>; className: string; children: ReactNode }) {
   const opacity = useTransform(x, [-60, -16, 16, 60], [0, 1, 1, 0]);
   return (
-    <motion.p style={{ opacity }} className={className}>
+    <motion.div style={{ opacity }} className={className}>
       {children}
-    </motion.p>
+    </motion.div>
+  );
+}
+
+/** Die fünf Schritte eines Leads – die Schrittleiste zeigt, wo er gerade steht. Übergabe kommt aus der Antwort-Karte. */
+const STEPS: { key: CardType | 'export'; label: string; done: string }[] = [
+  { key: 'lead', label: 'Vernetzen', done: 'Vernetzt' },
+  { key: 'first', label: 'Nachricht', done: 'Nachricht' },
+  { key: 'followup', label: 'Follow-up', done: 'Follow-up' },
+  { key: 'reply', label: 'Antwort', done: 'Antwort' },
+  { key: 'export', label: 'Übergabe', done: 'Übergabe' },
+];
+
+/**
+ * Schrittleiste statt Überschrift: erledigte Schritte mit Haken, der aktuelle weiß hinterlegt, die übrigen leise.
+ * Eine Antwort kann auch ohne Follow-up kommen – „Follow-up“ zählt dann trotzdem als erledigt (Orientierung, kein Verlauf).
+ */
+export function StepRail({ step, extra }: { step: CardType; extra?: ReactNode }) {
+  const current = STEPS.findIndex((entry) => entry.key === step);
+  return (
+    <Eyebrow>
+      <span className="flex flex-col items-center gap-2">
+        <ol aria-label="Schritt" className="flex flex-wrap justify-center gap-0.5 text-[12px] sm:gap-1 sm:text-[12.5px] font-medium normal-case tracking-normal" data-testid="step-rail">
+          {STEPS.map((entry, index) => (
+            <li
+              key={entry.key}
+              aria-current={index === current ? 'step' : undefined}
+              className={cn(
+                'flex items-center gap-1 rounded-full px-2 py-1 sm:px-2.5',
+                index === current ? 'bg-surface-3 font-semibold text-ink' : index < current ? 'text-ink-3' : 'text-ink-4',
+              )}
+            >
+              {index < current && <Check className="h-3 w-3" aria-hidden />}
+              {index < current ? entry.done : entry.label}
+              {index < current && <span className="sr-only"> (erledigt)</span>}
+            </li>
+          ))}
+        </ol>
+        {extra && <span className="text-[12px] font-medium normal-case tracking-normal text-ink-3">{extra}</span>}
+      </span>
+    </Eyebrow>
+  );
+}
+
+/** Ein Satz, warum diese Aufgabe jetzt dran ist – mit Statuspunkt (gut, Achtung, neutral). */
+export function StatusSentence({ tone = 'neutral', children, testId }: { tone?: 'good' | 'warn' | 'neutral'; children: ReactNode; testId?: string }) {
+  return (
+    <p className="mx-auto mt-4 flex max-w-[520px] items-baseline justify-center gap-2 text-center text-[15px] leading-[1.5] text-ink" data-testid={testId}>
+      <span
+        aria-hidden
+        className={cn('h-[7px] w-[7px] shrink-0 -translate-y-px rounded-full', tone === 'good' ? 'bg-good' : tone === 'warn' ? 'bg-warn' : 'bg-ink-3')}
+      />
+      <span>{children}</span>
+    </p>
+  );
+}
+
+/**
+ * Zeile über jedem Schreibfeld: Hier schreibst du selbst (Wunsch des Nutzers 07.10.) – der Text ist nur ein Vorschlag.
+ * „Leeren & selbst schreiben“ macht das Feld frei und setzt den Cursor hinein.
+ */
+export function WriteLabel({ children, onClear, hint = 'Vorschlag – einfach überschreiben' }: { children: ReactNode; onClear?: () => void; hint?: ReactNode }) {
+  return (
+    <div className="mb-2 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 px-1 text-[13px]">
+      {/* Kein <label>: Das Feld trägt sein aria-label selbst (MessageEditor). */}
+      <span className="font-medium text-ink-2">{children}</span>
+      <span className="flex items-baseline gap-3 text-ink-3">
+        {hint && <span className="hidden sm:inline">{hint}</span>}
+        {onClear && (
+          <button type="button" onClick={onClear} className="font-medium text-ink-2 underline-offset-4 transition-colors hover:text-ink hover:underline" data-testid="write-own">
+            Leeren & selbst schreiben
+          </button>
+        )}
+      </span>
+    </div>
   );
 }
 
 interface PersonHeaderProps {
-  lead: Lead;
+  lead: CockpitLead;
   onOpen: () => void;
+  /** Eine Zeile Kontext unter Position und Firma (darf eine MetaLine sein). */
   subtitle?: ReactNode;
-  children?: ReactNode;
-  /** Kompakter Kopf für Seiten mit Nachrichtenfeld. */
+  /** Link „LinkedIn-Profil öffnen“ – nur wo man selbst auf LinkedIn handeln muss. */
+  profileLink?: boolean;
+  /** Kleinerer Name für Seiten mit Nachrichtenfeld. */
   compact?: boolean;
 }
 
-/** Zentrierter Kopf: Profilbild, Name (öffnet die Historie), Position und Firma. */
-export function PersonHeader({ lead, onOpen, subtitle, children, compact = false }: PersonHeaderProps) {
-  const name = fullName(lead);
+/** Zentrierter Kopf: Name (öffnet die Historie), Position und Firma, optional eine Zeile Kontext und der Profil-Link. */
+export function PersonHeader({ lead, onOpen, subtitle, profileLink = false, compact = false }: PersonHeaderProps) {
+  const name = leadName(lead);
+  const profile = profileLink ? linkedinProfileUrl(lead) : null;
   return (
     <div className="flex flex-col items-center text-center">
-      <Avatar name={name} initials={initials(lead)} size={compact ? 44 : 72} />
-      <button
-        type="button"
-        onClick={onOpen}
-        title="Lead-Historie öffnen"
-        className={cn('group flex items-center gap-1 rounded-lg px-1 font-semibold text-ink', compact ? 'mt-3' : 'mt-5')}
-      >
+      <button type="button" onClick={onOpen} title="Lead-Historie öffnen" className="group flex items-center gap-1 rounded-lg px-1 font-semibold text-ink">
         <span
           className={cn(
             'display decoration-white/30 underline-offset-[6px] group-hover:underline',
             compact ? 'text-[28px] sm:text-[30px]' : 'text-[30px] sm:text-[36px]',
           )}
+          data-testid="lead-name"
         >
           {name}
         </span>
         <ChevronRight className="h-6 w-6 shrink-0 text-ink-3 transition-transform duration-200 group-hover:translate-x-0.5 group-hover:text-ink-2" />
       </button>
       <p className="mt-1.5 text-[16px] text-ink-2">
-        {lead.position} · {lead.company}
+        {leadPosition(lead)} · {leadCompany(lead)}
       </p>
-      {subtitle && <p className="mt-1 text-[14px] text-ink-3">{subtitle}</p>}
-      {children && <div className={cn('flex flex-wrap justify-center gap-2', compact ? 'mt-3' : 'mt-5')}>{children}</div>}
+      {subtitle && <div className="mt-1 text-[14px] text-ink-3">{subtitle}</div>}
+      {profile && (
+        <a
+          href={profile}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="mt-1.5 inline-flex items-center gap-0.5 text-[13px] text-ink-3 underline-offset-4 transition-colors hover:text-ink-2 hover:underline"
+        >
+          LinkedIn-Profil öffnen
+          <ArrowUpRight className="h-3.5 w-3.5" />
+        </a>
+      )}
     </div>
   );
 }
 
-/** Kleiner Abschnitt ohne Rahmen: Label + Inhalt. */
-export function Block({ label, icon, children, className }: { label: string; icon?: ReactNode; children: ReactNode; className?: string }) {
+/** Signal als Text mit kleinem Symbol – für die Kontextzeile unter dem Namen. */
+export function SignalText({ signal, ready }: { signal: LeadSignal | null; ready: boolean }) {
+  // Eigener Span statt <Placeholder>: cn führt block/inline-block nicht zusammen.
+  if (!ready) return <span aria-hidden className="inline-block h-4 w-40 rounded-full bg-white/[0.04] align-middle" />;
+  if (!signal) return null;
+  const Icon = signal.kind === 'meta_ads' ? Megaphone : signal.kind === 'hiring' ? Briefcase : UserSearch;
   return (
-    <section className={cn('mt-10', className)}>
-      <h2 className="mb-2.5 flex items-center justify-center gap-1.5 text-[12px] font-medium uppercase tracking-[0.08em] text-ink-3 [&>svg]:h-3.5 [&>svg]:w-3.5">
+    <span className="text-ink-2" data-testid="signal">
+      <Icon aria-hidden className="mr-1.5 inline h-3.5 w-3.5 -translate-y-px text-ink-3" />
+      {signal.label}
+    </span>
+  );
+}
+
+/** Ruhiger Platzhalter in fester Höhe, solange Verlauf/Signal noch laden – damit nichts springt. */
+export function Placeholder({ className }: { className?: string }) {
+  return <span aria-hidden className={cn('block rounded-full bg-white/[0.04]', className)} />;
+}
+
+/** Kleiner Abschnitt ohne Rahmen: Label + Inhalt. `className` ersetzt den Standardabstand (cn mischt nicht). */
+export function Block({ label, icon, children, className, testId }: { label: string; icon?: ReactNode; children: ReactNode; className?: string; testId?: string }) {
+  return (
+    <section className={className ?? 'mt-10'} data-testid={testId}>
+      <h2 className="mb-2.5 flex items-center justify-center gap-1.5 text-[12px] font-semibold text-ink-3 [&>svg]:h-3.5 [&>svg]:w-3.5">
         {icon}
         {label}
       </h2>
@@ -130,15 +233,36 @@ export function Block({ label, icon, children, className }: { label: string; ico
   );
 }
 
-/** KI-Zusammenfassung zum Lead – Kontext, um die Nachricht passend anzupassen. */
-export function AiSummary({ text }: { text: string }) {
+/** Verlauf konnte nicht geladen werden – mit „Erneut laden“ statt einer toten Karte. */
+export function DetailError({ leadId, className }: { leadId: string; className?: string }) {
+  const { ensureDetail } = useCockpit();
   return (
-    <section className="mx-auto mt-5 max-w-[540px] text-center" data-testid="ai-summary">
-      <h2 className="mb-1.5 flex items-center justify-center gap-1.5 text-[11.5px] font-medium uppercase tracking-[0.08em] text-ink-3">
-        <Sparkles className="h-3.5 w-3.5" />
-        KI-Zusammenfassung
-      </h2>
-      <p className="text-[14.5px] leading-[1.6] text-ink-2">{text}</p>
-    </section>
+    <p role="alert" className={cn('flex flex-wrap items-center justify-center gap-x-2 text-center text-[14px] text-ink-2', className)} data-testid="detail-error">
+      Verlauf konnte nicht geladen werden.
+      <button
+        type="button"
+        onClick={() => ensureDetail(leadId, true)}
+        className="font-medium text-ink underline-offset-4 hover:underline"
+      >
+        Erneut laden
+      </button>
+    </p>
+  );
+}
+
+/**
+ * Über welchen LinkedIn-Account (Wunsch des Nutzers 12.10.: ist der eigene voll, geht es über den des anderen weiter).
+ * `invite`: die nächste Anfrage geht über `account` · `message`: die Anfrage ging über `account`, also auch die
+ * Nachricht – nur dort ist man vernetzt. Nichts, wenn es der eigene Account ist.
+ */
+export function AccountHint({ kind, account, owner }: { kind: 'invite' | 'message'; account: CockpitLead['owner'] | null | undefined; owner: CockpitLead['owner'] }) {
+  if (!account || account === owner) return null;
+  const name = FOUNDERS[account]?.name ?? account;
+  return (
+    <p className="mx-auto mt-4 max-w-[480px] text-center text-[13.5px] font-medium leading-[1.55] text-accent" data-testid="account-hint">
+      {kind === 'invite'
+        ? `Über den LinkedIn-Account von ${name} – deiner hat heute keine Anfragen mehr frei.`
+        : `Vernetzt über den LinkedIn-Account von ${name} – schreib auch von dort.`}
+    </p>
   );
 }

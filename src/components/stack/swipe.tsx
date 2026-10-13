@@ -31,10 +31,4 @@ export function useSwipeActions(actions: SwipeActions) {
   if (context && present) context.actionsRef.current = actions;
 }
 
-/**
- * Wohin trägt der Schwung die Seite? Apples Projektion aus „Designing Fluid Interfaces“ (WWDC 2018):
- * exponentielles Abbremsen wie beim Scrollen.
- */
-export function project(velocity: number, decelerationRate = 0.998) {
-  return ((velocity / 1000) * decelerationRate) / (1 - decelerationRate);
-}
+export { project } from '../../lib/gesture';

@@ -36,10 +36,6 @@ export function formatRelative(ts: number, now = Date.now()): string {
   return days === 1 ? 'vor 1 Tag' : `vor ${days} Tagen`;
 }
 
-export function daysBetween(from: number, to = Date.now()): number {
-  return Math.max(0, Math.floor((to - from) / 86_400_000));
-}
-
 export function greetingForTime(ts = Date.now()): string {
   const hour = new Date(ts).getHours();
   if (hour < 11) return 'Guten Morgen';
